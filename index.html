@@ -1,49 +1,15 @@
-<!DOCTYPE html>
-<html>
+---
+layout: default
+title: Blog of leung
+---
 
-  <head>
-    <meta charset='utf-8' />
-    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
-    <meta name="description" content="Blog of leung : personal blog and work notes" />
+<h2>{{ page.title }}</h2>
+<p>最新文章</p>
+<ul>
+    {% for post in site.posts %}
+    <li>{{ post.date | date_to_string }} <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></li>
+    {% endfor %}
+</ul>
 
-    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
 
-    <title>Blog of leung</title>
-  </head>
 
-  <body>
-
-    <!-- HEADER -->
-    <div id="header_wrap" class="outer">
-        <header class="inner">
-          <a id="forkme_banner" href="https://github.com/huolinliang/blog_leung">View on GitHub</a>
-
-          <h1 id="project_title">Blog of leung</h1>
-          <h2 id="project_tagline">personal blog and work notes</h2>
-
-            <section id="downloads">
-              <a class="zip_download_link" href="https://github.com/huolinliang/blog_leung/zipball/master">Download this project as a .zip file</a>
-              <a class="tar_download_link" href="https://github.com/huolinliang/blog_leung/tarball/master">Download this project as a tar.gz file</a>
-            </section>
-        </header>
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div id="main_content_wrap" class="outer">
-      <section id="main_content" class="inner">
-        <p><strong>声明：此为工作和学习记录，也有部分总结，仅为方便自己查阅之用！</strong></p>
-      </section>
-    </div>
-
-    <!-- FOOTER  -->
-    <div id="footer_wrap" class="outer">
-      <footer class="inner">
-        <p class="copyright">Blog of leung maintained by <a href="https://github.com/huolinliang">huolinliang</a></p>
-        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
-      </footer>
-    </div>
-
-    
-
-  </body>
-</html>
