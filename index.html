@@ -13,7 +13,7 @@
     <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
 
-    <title>Blog Of Leung by huolinliang</title>
+    <title>Blog Of Leung</title>
   </head>
 
   <body>
@@ -32,6 +32,13 @@
 <a name="welcome" class="anchor" href="#welcome"><span class="octicon octicon-link"></span></a>Welcome</h3>
 
 <p>Hello, I am leung. This blog is builded to make some record of my experience and work notes.If these pages are helpful for you,that will be great!</p>
+
+<h2>最新文章</h2>
+<ul>
+    {% for post in site.posts %}
+        <li>{{ post.date | date_to_string }} <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></li>
+    {% endfor %}
+</ul>
         </section>
 
         <aside id="sidebar">
