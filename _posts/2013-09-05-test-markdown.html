@@ -1,8 +1,22 @@
 ---
 layout: default
-title: markdown 脚本测试用
+title: markdown-to-html脚本测试
 ---
 
 <h2>markdown test</h2>
 
-<p>markdown脚本测试</p>
+<p>markdown转换为html脚本测试,我伤心地发现在本地写好的markdown文件貌似不能被网站正确地解析，页面直接凌乱了......</p>
+<p>对jeykll实在是鸟蛋级别，想想博客的目的是快乐地写作，所以我果断不折腾了，直接利用markdown官方给出的一个markdown转换成html的工具Markdown.pl，再加个shell脚本，应该也算是比较方便的做法吧.....至少我在本地写博客的时候还是用的markdown.....</p>
+<p>如果能正确地看到上面那段话，那说明我的做法是可行的，哈，下面顺便我的做法</p>
+<p>脚本很简单，就是按一定规则调用markdown给出的转换工具就好了,工具网上随便搜就有了，shell代码如下：</p>
+<p>#!/bin/bash</p>
+<p>filename=$1</p>
+<p>new_filename=${filename%.md}</p>
+<p>/usr/local/bin/Markdown.pl --html4tags $filename > ${new_filename}.html</p>
+
+<p>这个脚本的作用是针对某个后缀为md的文件，把文件内容转换为html语言，并把文件名字中的md后缀换成html</p>
+<p>然后新建一个目录，如直接home目录下mkdir mytool，然后把写好的脚本放到该目录中，最后修改一下环境变量/etc/profile，把mytool目录加入进去，这样就可以在任意目录执行这个转换脚本了</P>
+<p>export PATH=$PATH:~/mytool/</p>
+<p>Wish me best!</p>
+
+<p>{{ page.date | date_to_string }}</p>
