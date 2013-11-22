@@ -31,9 +31,7 @@
       <div class="inner clearfix">
         <section id="main-content">
         　          {{ content }}
-  {% if page.previous %}
-    <a id="left" href="{{ page.previous.url }}" title="{{ page.previous.title }}">&larr; Previous</a>
-  {% endif %}
+  <a &larr;name="goback" onclick="history.goback()">
         </section>
 
         <aside id="sidebar">
