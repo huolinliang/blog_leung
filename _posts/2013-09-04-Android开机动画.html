@@ -1,0 +1,30 @@
+<hr>
+
+<p>layout: default</p>
+
+<h2>title: Android开机动画制作 </h2>
+
+<h1>Android开机动画制作</h1>
+
+<p>Android的开机动画(即第二屏)，是由一系列的图片连续刷屏实现的，手动制作该动画的要点如下：
+* 创建新目录，命名随便，如bootanimation
+* 创建子目录 part0和文件desc.txt
+* 放入图片文件，按一定规律命名，如1.jpg,2.jpg
+* 往desc.txt写入代码
+* 打包</p>
+
+<p>编辑desc.txt，参照如下写入 <br>
+1280 720 15 <br>
+p 0 0 part0  </p>
+
+<p>解析：1280 720就是图片的分辨率；15是每秒需要显示的图片张数，即刷新速度；p是标志符；p后第一个0，表示循环的次数，0表示一直循环，直到完成开机；p后第二个0，表示阶段切换时间间隔，我们只有一个part0，一般设为0即可；part0，就是我们创建的图片目录  </p>
+
+<p>完成后进行非压缩打包，所以打包参数是-0,假设这里图片的格式是png，可以用如下命令完成打包</p>
+
+<p>$zip -0 bootanimation.zip part0/*png desc.txt</p>
+
+<p>完成以后可以直接adb push到机器上验证，在板子中的路径是/system/media/bootanimation.zip</p>
+
+<p>注意：实际操作中发现有些人进行同样的操作，但动画就是无效，开机黑屏。检查发现，他们都是使用windows操作系统，而且文本编辑器是自带的记事本，这样由于windows系统与linux系统的文本换行符不一致，windows下是'\r\n'，而linux下就是'\n'，导致解析失败。所以，不建议使用windows下的编辑器操作。</p>
+
+<p>{{ page.date | date_to_string }}</p>
