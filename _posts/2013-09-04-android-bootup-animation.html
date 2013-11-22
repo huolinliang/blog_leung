@@ -8,11 +8,11 @@ title: android bootup animation
 <p>创建一个新目录，命名随便，一般就叫bootanimation就好了,里面再创建一个子目录part0和文件desc.txt,其中part0是第一阶段动画，我们一般用一个阶段的动画就足够了，desc.txt是动画属性描述文件</p>
 <p>在part0中放入连续的图片，按数字递增方式命名，如01.jpg，02.jpg</p>
 <p>编辑desc.txt，写入如下描述：</p>
-<p>1280 720 15
+<p>1280 720 15 <br/>
 p 0 0 part0
 </p>
 <p>解析：1280 720就是图片的分辨率了；15是每秒显示的图片张数，即刷新的速度；p是标志符号；p后的第一个0表示循环次数，0表示一直循环直到开机完成；p后的第二个0表示阶段切换时间间隔，我们只用一个阶段，一般设为0即可;part0就是图片目录了</p>
-<p>完成后进行非压缩打包，打包参数为-0,假设这里的图片格式是jpg，打包命令如下：
+<p>完成后进行非压缩打包，打包参数为-0,假设这里的图片格式是jpg，打包命令如下：<br/>
 $zip -0 bootanimation.zip part0/*jpg desc.txt
 完成之后可以直接adb push进行验证，在android中的路径为/system/media/bootanimation.zip</p>
 <p>{{ page.date | date_to_string }}</p>
