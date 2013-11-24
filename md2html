@@ -1,0 +1,6 @@
+#!/bin/bash
+
+filename=$1
+new_filename=${filename%.markdown}
+/usr/local/bin/Markdown.pl --html4tags $filename > ${new_filename}.html
+

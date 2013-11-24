@@ -1,0 +1,55 @@
+---
+layout: default
+title: android内核logo修改
+---
+
+<h2>android内核logo修改</h2>
+
+<p>android的开机过程中总共有三个阶段的logo，分别对应kernel启动，boot启动，和android启动这三个阶段.一般用到的是内核启动logo和android启动时的那个动画.如果说内置apk是厂商在android系统中创造差异化的一个点，那么开机logo的定制就是差异化的另一个点了，或者说是第一个点.也是相当重要的吧.</p>
+
+<p>如果你曾经在android的各大论坛上混过，大概也能知道早年在论坛上讨论修改开机第一屏的帖子和教程是有多少了，这也从侧面反映了大家都希望有差异化的系统吧。不过论坛上的方法还是从文件角度来出发的，这里我们从代码的角度来看看.</p>
+
+<p>首先我们需要分析一下开机logo的显示过程，在内核中，显示设备被抽象了出来，统一叫帧缓冲区，或者直接叫fb.帧缓冲区设备的内核驱动程序模块是fbmem，驱动在kernel/drivers/video/fbmem.c，另外帧缓冲区的控制台驱动是fbcon，驱动在kernel/goldfish/drivers/video/console/fbcon.c.这两个驱动都有一定的代码量，但是实际上，这里只需要关注内核如何控制在fb中渲染图片数据就够了.</p>
+
+<p>当系统执行切换控制台的时候，模块fbcon中的函数fbcon<em>switch()会被调用，
+    static int fbcon</em>switch(struct vc<em>data *vc)
+    {
+        struct fb</em>info *info, *old<em>info=NULL;
+        ......
+        if(logo</em>shown == FBCON<em>LOGO</em>DRAW){
+            ......
+            fb<em>show</em>logo(info, ops->rotate);
+            ......
+            return 0;
+        }
+        return 1;
+    }</p>
+
+<p>这里看到当显示logo的准备工作已经妥当，该函数就会调用另一个函数fb<em>show</em>logo()来显示第一个开机画面，这个就是我们要跟下去的关键函数.</p>
+
+<p>发现会有个fb.c文件对该函数进行最后的实现，各家平台可能会有修改，会有一些出入，但对程序员来说应该还是比较容易grep出来的.
+    #if !defined(CONFIG<em>FRAMEBUFFER</em>CONSOLE)&amp;&amp; defined(CONFIG<em>LOGO)
+    ......
+    if(fb</em>prepare<em>logo(fb</em>inf->fb[0], FB<em>ROTATE</em>UR)){
+        fb<em>set</em>cmap(&amp;fb<em>inf->fb[0]->cmap, fb</em>inf->fb[0]);
+        fb<em>show</em>logo(fb<em>inf->fb[0], FB</em>ROTATA<em>UR);
+        fb</em>inf->fb[0]->fbops->fb<em>pan</em>display(&amp;fb<em>inf->fb[0]->var), fb</em>inf->fb[0];
+    }</p>
+
+<p>上面只是实现过程中的两个关键点分析，那么该如何修改开机logo呢?......，最方便的方法当然还是换图片文件了.但是既然我们找到了实现的关键代码，那么当然也可以用代码的方式来修改了.但是这里先不这么干，因为那样的话篇幅就太长了.更换图片文件的方式是非常简单的.内核图片的路径是在kernel/drivers/video/logo目录下，默认使用的是logo<em>linux</em>clut224.ppm这张图片.图片的格式是ppm，是一种liuux的图像格式，颜色深度只有224,低于8位.</p>
+
+<p>生成该图片，可以使用netpbm这个工具，ubuntu用户可以直接sudo apt-get install netpbm，然后敲入三个命令,假设手上待转换的图片命名为logo<em>linux</em>clut224.png ：
+    $pngtopnm logo<em>linux</em>clut224.png > logo<em>linux</em>clut224.pnm
+    $pnmquant 224 logo<em>linux</em>clut224.pnm > logo<em>linux</em>clut224.pnm
+    $pnmtuplainpnm logo<em>linux</em>clut224.pnm > logo<em>linux</em>clut224.ppm</p>
+
+<p>然后直接替换，重新编译一下内核即可.</p>
+
+<p>分析了fbmem.c这个文件之后，发现其实不怎么改代码，也还是有点新意思可以玩的.在标准内核中，开机的logo就是我们linux的吉祥物企鹅了，这个企鹅通常是在左上角出现，如果我们需要它在屏幕中间出现的话，只需要修改两个变量就好.在fbmem.c中，找到fb<em>show</em>logo_line(),修改image.dx和image.dy为：
+    mage.dx = (info->var.xres/2)-(logo->width/2);
+    image.dy = (info->var.yres/2)-(logo->height/2);</p>
+
+<p>熟悉linux的同学肯定都知道，linux机器开机时的企鹅数量是跟cpu核心数对等的，就是说单核的一只企鹅，双核的两只，类推，这个还是挺有趣的.但是如果你想玩玩新花样，这里也是可以人为去改的，话说没什么是不可以改的......在fbmem.c中调用fb<em>show</em>logo()的时候，会传递5个参数，其中最后一个是num<em>online</em>cpus()，这是一个获取cpu数目的函数，我们可以直接换个常量进去，然后就可以出现任意个企鹅啦，如果你屏幕够大的话......</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
