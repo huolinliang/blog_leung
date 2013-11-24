@@ -30,11 +30,11 @@ title: android内核logo修改
 
 <p>发现会有个fb.c文件对该函数进行最后的实现，各家平台可能会有修改，会有一些出入，但对程序员来说应该还是比较容易grep出来的.</p>
 <pre><code>
-    #if !defined(CONFIG<_FRAMEBUFFER_CONSOLE)&amp;&amp; defined(CONFIG_LOGO)
+    #if !defined(CONFIG_FRAMEBUFFER_CONSOLE)&amp;&amp; defined(CONFIG_LOGO)
     ......
-    if(fb_prepare_logo(fb_inf->fb[0], FB<_ROTATE_UR)){
-        fb_set_cmap(&amp;fb_inf->fb[0]->cmap, fb</_inf->fb[0]);
-        fb<_show_logo(fb_inf->fb[0], FB</_ROTATA_UR);
+    if(fb_prepare_logo(fb_inf->fb[0], FB_ROTATE_UR)){
+        fb_set_cmap(&amp;fb_inf->fb[0]->cmap, fb_inf->fb[0]);
+        fb_show_logo(fb_inf->fb[0], FB_ROTATA_UR);
         fb_inf->fb[0]->fbops->fb_pan_display(&amp;fb_inf->fb[0]->var), fb_inf->fb[0];
     }</code></pre>
 
@@ -51,7 +51,7 @@ title: android内核logo修改
 <p>分析了fbmem.c这个文件之后，发现其实不怎么改代码，也还是有点新意思可以玩的.在标准内核中，开机的logo就是我们linux的吉祥物企鹅了，这个企鹅通常是在左上角出现，如果我们需要它在屏幕中间出现的话，只需要修改两个变量就好.在fbmem.c中，找到fb_show_logo_line(),修改image.dx和image.dy为：</p>
 <pre><code>
     mage.dx = (info->var.xres/2)-(logo->width/2);
-    image.dy = (info->var.yres/2)-(logo->height/2);</code><pre>
+    image.dy = (info->var.yres/2)-(logo->height/2);</code></pre>
 
 <p>熟悉linux的同学肯定都知道，linux机器开机时的企鹅数量是跟cpu核心数对等的，就是说单核的一只企鹅，双核的两只，类推，这个还是挺有趣的.但是如果你想玩玩新花样，这里也是可以人为去改的，话说没什么是不可以改的......在fbmem.c中调用fb_show_logo()的时候，会传递5个参数，其中最后一个是num_online_cpus()，这是一个获取cpu数目的函数，我们可以直接换个常量进去，然后就可以出现任意个企鹅啦，如果你屏幕够大的话......</p>
 
