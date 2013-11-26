@@ -7,9 +7,9 @@ title: ubuntu系统中jdk安装与配置
 
 <p>前几天电脑突然崩了，最终还是没保住，只好重装. 安装完新的ubuntu之后，当然要为android工程重新搭建环境了，想想上一次自己搭环境的时候还是遇到挺多麻烦的呢，没想到这次觉得挺轻松的,很久以前经常看到有人讨论jdk的安装配置问题，其实还觉得挺奇怪的,因为真的很简单啊。不过还是记录一下自己的方法，免得哪一天自己傻逼了到处乱找资料.</p>
 
-<p>下载jdk，最好是到oracle的官网去下载，虽然linux中也有开源版本的open jdk，但是貌似在编译android的时候会冒出些稀奇古怪的问题来，为了不浪费时间，还是去官网下在闭源版本好了. 找好跟系统匹配的版本，如手上的系统是64位的linux系统，那就下linux的x64版本，如jdk-6u37-linux-x64.bin. </p>
+<p>下载jdk，最好是到oracle的官网去下载，虽然linux中也有开源版本的open jdk，但是貌似在编译android的时候会冒出些稀奇古怪的问题来，为了不浪费时间，还是去官网下闭源版本好了. 找好跟系统匹配的版本，如手上的系统是64位的linux系统，那就下linux的x64版本，如jdk-6u37-linux-x64.bin. </p>
 
-<p>下载完把jdk的bin文件放在自己指定的目录，并进入该目录，如我直接在home下新建jdk1.6.1 _ 37</p>
+<p>下载完把jdk的bin文件放在自己指定的目录，并进入该目录，如我直接在home下新建jdk1.6.1_37</p>
 
 <p>进入该目录，执行命令安装</p>
 
@@ -19,7 +19,7 @@ $. jdk-6u37-linux-x64
 
 <p>安装完毕后，在bashrc中把环境变量设置好，直接执行vim ~/.bashrc,在文件最后加上以下内容：</p>
 
-<pre><code>JDK_DIR=/home/leung/jdk1.6.0 _ 37
+<pre><code>JDK_DIR=/home/leung/jdk1.6.0_37
 export JAVA_HOME=$JDK_DIR
 export CLASSPATH=$JDK_DIR/lib:$JDK_DIR/jre/lib:$CLASSPATH
 export JAVA_PATH=$JDK_DIR/bin:$JDK_DIR/jre/bin
