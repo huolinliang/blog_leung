@@ -1,0 +1,106 @@
+---
+layout: default
+title: 使用键盘操作平板
+---
+
+<h2>使用键盘操作平板</h2>
+
+<p>情景：当时平板的触摸屏硬件上出了问题，而刚好没有多余的触摸屏可替换，然而现在有东西在调试，比如说我做了一些内存控制上的优化，现在想跑个分测测分数和稳定性.</p>
+
+<p>环境：调试用的机器默认都打开了adb，连接稳定.</p>
+
+<p>有了稳定的adb，其实对于驱动人员来说，有没有触摸屏关系都不是太大了. 因为android已经有很完善的接口，在终端下做基本的按键操作是完全没问题的. 只需要调用接口，输入相应的键值，就可以操作平板了. 命令使用方式如下(在adb模式下)：</p>
+
+<pre><code>$ input keyevent &lt;keycode&gt;
+</code></pre>
+
+<p>需要按键值的信息，可以直接查看定义文件，工程路径一般是:frameworks/base/core/java/android/view/KeyEvent.java</p>
+
+<p>操作了几下之后，首先是觉得这种方式还是蛮酷的，然后敲多了几次命令之后就觉得烦了，重复敲命令很耗时间，即使有命令记录可以回溯，每次想干点什么总是要查按键定义，折腾不起......</p>
+
+<p>后来我想干脆把这些东西弄进一个脚本里面，需要用到的时候直接跑脚本，然后接收键盘按键代替那长长的一串命令，貌似也不错呢.完成后的脚本如下：</p>
+
+<pre><code>#!/system/bin/sh
+
+### shell for input simulate ###
+### author: leung ###
+### date: 2013-09-26 ###
+set -e
+count=1
+
+insert()
+{
+    read insert
+    input text $insert
+}
+
+while [ $count -le 1000 ]
+do
+    read -s -n1 input
+    case $input in
+        h)
+        input keyevent 21;;
+        j)
+        input keyevent 20;;
+        k)
+        input keyevent 19;;
+        l)
+        input keyevent 22;;
+        t)
+        input keyevent 27;;
+        u)
+        input keyevent 82;;
+        m)
+        input keyevent 164;;
+        d)
+        input keyevent 67;;
+        p)
+        input keyevent 26;;
+        H)
+        input keyevent 3;;
+        b)
+        input keyevent 4;;
+        T)
+        input keyevent 61;;
+        f)
+        input keyevent 80;;
+        X)
+        input keyevent 66;;
+        +)
+        input keyevent 81;;
+        -)
+        input keyevent 69;;
+        x)
+        input keyevent 17;;
+        /)
+        input keyevent 76;;
+        =)
+        input keyevent 70;;
+        i)
+        insert;;
+        *)
+        exit -1
+    esac
+    count=$(($count+1))
+done
+</code></pre>
+
+<p>脚本的写法比较粗鲁，只是一个循环加一堆罗列. 但是已经基本实现了初衷，凑合着也能用.这个脚本是响应电脑键盘的输入，然后控制平板. 这里实现的是最基本的操作. 支持的按键操作如下：</p>
+
+<ul>
+<li>h,j,k,l 是vim的操作风格，代表上下左右</li>
+<li>t 是take a picture，可以在摄像模式中拍照</li>
+<li>u 是unlock，可以让机器从锁屏状态中解锁</li>
+<li>m 是mute，表示静音</li>
+<li>d 是delete，表示删除字符</li>
+<li>p 是power，表示power键</li>
+<li>H 大写的H是home键</li>
+<li>b 是back，表示返回键</li>
+<li>T 是Tab键，可以切换按钮</li>
+<li>f 是focus，可以使camera对焦</li>
+<li>X 大写的X是表示enter键</li>
+<li>+,-,x,/ 表示加减乘除，乘号之所以用小写的x是因为*号是通配符</li>
+<li>i 是insert，是vim的操作风格，输入i之后就进入输入模式</li>
+</ul>
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
