@@ -1,0 +1,136 @@
+---
+layout: default
+title: android设备上使用bmp做开机logo
+---
+
+<h2>android设备上使用bmp开机logo</h2>
+
+<p>在android系统中更换内核开机logo的方法已经提过，一般我们想定制自己的logo直接改内核开机图片就好. 但是假如放入内核的是超高清或者高分辨率图片，那么会导致内核的大小变得比较大，而内核的大小是有限制的，一般是8Mb，也有些嵌入式平台甚至是4M，所以内核的空间是珍贵的，如果图片这种数据在内核里占用了较多空间，就显得不太合理了.另外,linux内核中默认使用的是logo _ linux _ clut224.ppm这张图片,颜色深度只有224,低于8位的256,在大屏幕上会看到比较明显的失真.</p>
+
+<p>解决方案:把图片数据(原始数据),放在boot镜像中,等内核启动时直接从这里读取数据并写入到framebuffer中.考虑到扩展性,可以在内核显示logo的时候加一个判断,优先检查根文件系统中是否存在logo的数据文件,如果有则显示boot里面的logo,如果没有就继续显示内核原有的logo.</p>
+
+<p>基本实现过程:找到fb的驱动程序,内核中的路径一般是kernel/drivers/video/xxx/xxxfb.c,不同的平台这个文件的路径可能有些出入,但是基本是在kernel/drivers/video/下面.下面对这个文件进行修改,加入一个新的写fb的函数并调用它.</p>
+
+<p>首先,在文件中增加一个函数fb_draw_bmp_logo():</p>
+
+<p>第一步是包含必要的头文件进来，这里加进了三个头文件，其中syscalls.h是系统调用，我们要用它里面的接口进行文件操作；decompress/inflate.h这个头文件有解压缩用到的gunzip函数，没错，为了进一步节省空间，我们会对放在boot镜像中的图片数据进行文件级别的压缩，这并不会降低图片的质量；vmalloc.h是申请内存空间时用到，这里之所以不用kmalloc是考虑到图片的数据有可能会超过4M，超过了kmalloc的上限.</p>
+
+<pre><code>//leung modify
+#include&lt;linux/syscalls.h&gt; 
+#include&lt;linux/decompress/inflate.h&gt;
+#include &lt;linux/vmalloc.h&gt;
+</code></pre>
+
+<p>然后开始写函数的实现，这里的动作是用系统调用打开图片数据文件，获取图片的大小信息，然后根据图片大小申请内存，然后直接把数据解压到fb中，实现显示.</p>
+
+<pre><code>int fb_draw_imt_logo(struct fb_info *fi){   
+    int fd;
+    int len;
+    char *input;
+    struct stat st;
+    char logo_path[128];
+    sprintf(logo_path,"/%dx%d.gz",fi-&gt;var.xres,fi-&gt;var.yres);
+    printk("logo dir=%s\n",logo_path);
+    fd=sys_open(logo_path,O_RDONLY,0);
+    printk("logo open fd=%d\n",fd);
+
+    while(fd &lt; 0){
+        return -1;
+    }
+
+    sys_newfstat(fd,&amp;st);
+    len=st.st_size;
+    printk("%p %x\n",fi-&gt;screen_base,len);
+    input=vmalloc(len);
+
+    if(!input){
+        printk(KERN_ERR "Failed to vmalloc input.\n");
+        return -1;
+    }
+
+    sys_read(fd,input,len);
+    gunzip(input, len, NULL, NULL, fi-&gt;screen_base, NULL, NULL);
+    printk("logo open succeed!\n");
+    vfree(input);
+    sys_close(fd);
+    return 0;
+}   
+//leung modify end
+</code></pre>
+
+<p>函数编写完毕之后，就找到原本的显示函数调用的地方，在那里调用自己的显示函数,比如说我找到了xx _ fb _ register()，在它里面找到了原本的显示函数fb _ show _ logo()的最终调用处;于是我作出如下修改：</p>
+
+<pre><code>ret = -1;
+ret = fb_draw_bmp_logo(fb_inf-&gt;fb[fb_inf-&gt;num_fb-2]);
+if(ret &lt; 0) {
+    //旧的调用函数
+}
+</code></pre>
+
+<p>然后因为我们的logo数据是放在了boot镜像中，也就是必须要等待根文件系统起来之后，我们的数据文件才能被读取，所以我们需要把fb的驱动加载优先级降低，把它延后到根文件系统那一级,可以直接在文件的末尾，找到驱动的初始化函数，修改为rootfs _ initcall(),比如说我这里的修改如下：</p>
+
+<pre><code>//subsys_initcall_sync(xx_fb_init);
+rootfs_initcall(xx_fb_init);
+</code></pre>
+
+<p>值得注意的是，在有些平台中，你需要针对驱动加载顺序做的修改可能不只是上面提到的一点，因为fb延后到rootfs这一级别，而内核中可能还有其他的模块在rootfs启动之前就调用到了fb，这样就会导致空指针错误，内核会挂起，机器完全黑屏，嘿嘿。假如测试的时候发现机器出现这种情况，只能接上串口看看内核的打印信息了，然后就是追着堆栈错误信息跟踪代码，能力所限，对这方面还没有成熟的经验。但不用太担心，这需要一点内核调试的经验，然而并不是什么不可解的问题.只是需要一点时间来试验.</p>
+
+<p>具体的加载顺序，可以查看头文件kernel/include/linux/init.h</p>
+
+<h3>logo的制作</h3>
+
+<p>代码中是直接把图片原始数据解压出来，然后写入到帧缓冲区中实现显示. 但是普通的图片，不管是jpg,bmp,png格式，都是经过编码的，这些数据不是直接能用的，因此还需要先行对图片进行处理，这个工作可以借助专业的开源工具ffmpeg.</p>
+
+<h4>获取ffmpeg</h4>
+
+<p>这里使用ffmpeg是希望把普通格式的图片转化成原始的raw文件，觉得委屈ffmpeg了，哈哈...如果在gentoo系统上，直接emerge一个就好了，而在ubuntu上试了好几个源，发现版本比gentoo上拿到的最低版本还低，囧...所以ubuntu党还是直接把源码克隆下来好了</p>
+
+<pre><code>$ git clone git://source/ffmpeg.org//ffmpeg.git
+$ sudo apt-get install yasm
+</code></pre>
+
+<p>安装yasm是因为汇编需要用到汇编器，貌似一般ubuntu系统也没有自带。ffmpeg的仓库克隆下来之后，就按惯例进行配置，编译，编译安装，去到ffmpeg的目录,执行：</p>
+
+<pre><code>$ ./configure
+$ make
+$ make install
+</code></pre>
+
+<p>执行configure之后会生成config.h文件，查看一下#define CONFIG_FFPLAY,这个值如果是0，那么还需要安装缺少的SDL库</p>
+
+<pre><code>$ sudo apt-get install libsdl1.2-dev
+</code></pre>
+
+<p>重新执行配置，编译，编译安装几个步骤，一般问题不大...假设ffmpeg搞定了，下一步就可以使用它来处理图片了，这里列出我使用的命令：</p>
+
+<pre><code>$ ./ffmpeg -i test.jpg -f image2 -pix_fmt rgb565 test.raw
+</code></pre>
+
+<p>ffmpeg的参数实在是太多了，这里的-i表示输入文件，-f表示force format，image2表示输出的图片是image2包装格式，pix _ fmt表示可用的像素格式，这里用的是rgb565格式.....有兴趣的可以自己ffmpeg --help研究研究</p>
+
+<p>当然了，为了更方便使用这个工具，利用脚本是一个很好的方式，我的脚本如下，功能是查找跟脚本在同一目录下的文件，把其中的bmp,jpg,png格式的文件转换成raw文件，并进行压缩，并自动拷贝到android工程的out目录.</p>
+
+<pre><code>#!/bin/bash
+
+set -e
+
+cd ${0%/*}
+
+for name in *.{bmp,jpg,png}; do
+gzname=${name%.*}
+if [ ! -f "${name}" ]; then
+    continue
+fi
+./ffmpeg -i ${name} -f image2 -pix_fmt rgb565 ${gzname}.raw
+gzip -9 ${gzname}.raw
+mv ${gzname}.raw.gz $OUT/root/${gzname}.gz
+echo "$name --&gt; $OUT/root/$gzname.gz"
+done
+
+cd -
+</code></pre>
+
+<p>感觉写得太长了，在浏览器上估计会很难看吧- -</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
