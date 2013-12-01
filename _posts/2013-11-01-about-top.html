@@ -9,7 +9,7 @@ title: 使用top监控android系统性能
 
 <p>通常情况下，只需要抓住top命令的几个要点，就能把系统性能看个大概了.linux上直接执行top就能看到以下界面，在android的shell环境中如果直接敲入top的话会发现跟普通linux下根本不同，那应该是android修改过的top命令吧，不过没关系，只要有busybox就好了，输入busybox top就能又看到熟悉的界面了.</p>
 
-<p><img src="../../photos/top.png" alt="result of top command" title=""></p>
+<p><img src="../../../_posts/photos/top.png" alt="result of top command" title=""></p>
 
 <p>首先要看的第一个地方，是load average，从字面意思知道这是平均负载，通常也认为就是cpu的负载. load average的值在不同的设备上是要区分对待的，因为针对不同核心数的cpu，满载运行的负载值是不一样的. load average的值是指cpu在单位时间内平均需要承担多少负载，一般来说负载值不超过cpu的核心数都可以认为系统运行是顺畅的. 比如说，对于单核的cpu来说，load average的值在0~1之间变动就是属于正常运行，而对于双核cpu来说，这个值在0~2之间都属于正常运行，它们表明系统尚未满载,后面继续类推. 而一个双核cpu，加入load average达到了4以上，它表明cpu的每个核心都在承担它满负载的两倍运算量，这时候已经存在很大的不稳定性了.对于android系统来说，这时候就很容易出现那些被人吐槽过无数遍的问题，例如死机，例如自动重启，不多说.所以，load average非常重要.</p>
 
