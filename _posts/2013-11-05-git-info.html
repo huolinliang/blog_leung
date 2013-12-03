@@ -1,4 +1,9 @@
-<h2>在内核启动时加上git提交信息</h2>
+---
+layout: default
+title: 在android内核启动时加上git提交信息
+---
+
+<h2>在android内核启动时加上git提交信息</h2>
 
 <p>场景：公司使用git进行版本管理，老固件查问题</p>
 
@@ -49,3 +54,6 @@ echo \#define LINUX_COMPILER \"`$CC -v 2&gt;&amp;1 | tail -n 1`\"
 <p>----------------邪恶的分割线----------------</p>
 
 <p>当然了，上面提到的作用只是普通的说法，更深层的说法是发现软件出问题时，一看内核log就能知道编译者是谁，最后提交者是谁，然后就可以照着名字去抓人了，嘿嘿.</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
