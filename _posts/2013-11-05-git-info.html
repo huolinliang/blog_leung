@@ -1,0 +1,59 @@
+---
+layout: default
+title: 在android内核启动时加上git提交信息
+---
+
+<h2>在android内核启动时加上git提交信息</h2>
+
+<p>场景：公司使用git进行版本管理，老固件查问题</p>
+
+<p>工作中，会遇到一些比较恶心的问题. 比如说，某个从我们手上出去的机器，过了一个多月之后反馈说有xx问题，然而，这时候我们已经很难想起这个机器里面的固件的具体状态了. 虽然内核启动信息中可以看到编译者和编译时间，但是却没有代码库的日期，不方便回板的时候定位代码排查问题. </p>
+
+<p>所以，决定在内核启动信息上增加git的提交信息，目的是以后编译出来的固件都能知道最后的提交者是谁，这样就能更好地利用git的版本管理功能来协助排查问题了.</p>
+
+<p>正常情况下，内核启动时的前几行会是类似以下这样的：</p>
+
+<p><img src="../../../images/kernel-no-git-commit-info.png" alt="kernel-no-git-commit-info" title=""></p>
+
+<p>留意到linux version开头的这一行，我们可以看到的是linux的内核版本号是3.2.0，编译者是build@roseapple，编译器的版本是gcc 4.6.3，编译时间是Oct 23 09:20:45等等</p>
+
+<p>而修改之后，会类似地变成这样：</p>
+
+<p><img src="../../../images/kernel-has-git-commit-info.png" alt="kernel-has-git-commit-info" title=""></p>
+
+<p>会看到linux version那一行是类似的，略有不同是因为截图时的机器不同，但是这不是重点.重点是下面一行，会看到有commit后面跟着一串字符，这个就是git的提交号，是一串hash码，利用这一串码就能在git服务器上定位到具体提交点，然后还有提交者的名字，提交时间等等.</p>
+
+<p>这样，就能完整地知道，某个固件是谁在什么时候编译出来的，而他在编译这个固件的时候git上最后的提交者是谁！</p>
+
+<h3>实现过程</h3>
+
+<p>实现这个特性还是比较简单的，只要在内核里面进行两处修改即可. 下面用patch的形式展示修改过程. 首先是要修改version.c，这里是内核init的时候的版本信息来源，我们给它增加一个COMMIT _ INFO</p>
+
+<pre><code>+++ b/kernel/init/version.c
+@@ -40,7 +40,7 @@ EXPORT_SYMBOL_GPL(init_uts_ns);
+/* FIXED STRINGS! Don't touch! */
+const char linux_banner[] =
+    "Linux version " UTS_RELEASE " (" LINUX_COMPILE_BY "@"
+    -       LINUX_COMPILE_HOST ") (" LINUX_COMPILER ") " UTS_VERSION "\n";
+    +       LINUX_COMPILE_HOST ") (" LINUX_COMPILER ") " UTS_VERSION "\n" "(" COMMIT_INFO ")" "\n";
+</code></pre>
+
+<p>然后修改mkcompile _ h文件，为COMMIT _ INFO定义具体的内容，这里是取git log的前三行</p>
+
+<pre><code>+++ b/kernel/scripts/mkcompile_h
+@@ -77,6 +77,7 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
+echo \#define LINUX_COMPILE_HOST \"`echo $LINUX_COMPILE_HOST | $UTS_TRUNCATE`\"
+
+echo \#define LINUX_COMPILER \"`$CC -v 2&gt;&amp;1 | tail -n 1`\"
+    +   echo \#define COMMIT_INFO \"`git log | head -3`\"
+) &gt; .tmpcompile
+</code></pre>
+
+<p>重新编译一下内核，ok.</p>
+
+<p>----------------邪恶的分割线----------------</p>
+
+<p>当然了，上面提到的作用只是普通的说法，更深层的说法是发现软件出问题时，一看内核log就能知道编译者是谁，最后提交者是谁，然后就可以照着名字去抓人了，嘿嘿.</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
