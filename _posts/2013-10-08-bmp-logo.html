@@ -5,7 +5,7 @@ title: android设备上使用bmp做开机logo
 
 <h2>android设备上使用bmp开机logo</h2>
 
-<p>在android系统中更换内核开机logo的方法已经提过，一般我们想定制自己的logo直接改内核开机图片就好. 但是假如放入内核的是超高清或者高分辨率图片，那么会导致内核的大小变得比较大，而内核的大小是有限制的，一般是8Mb，也有些嵌入式平台甚至是4M，所以内核的空间是珍贵的，如果图片这种数据在内核里占用了较多空间，就显得不太合理了.另外,linux内核中默认使用的是logo _ linux _ clut224.ppm这张图片,颜色深度只有224,低于8位的256,在大屏幕上会看到比较明显的失真.</p>
+<p>在android系统中更换内核开机logo的方法已经提过，一般我们想定制自己的logo直接改内核开机图片就好. 但是假如放入内核的是超高清或者高分辨率图片，那么会导致内核的大小变得比较大，而内核的大小是有限制的，一般是8Mb，也有些嵌入式平台甚至是4M，所以内核的空间是珍贵的，如果图片这种数据在内核里占用了较多空间，就显得不太合理了.另外,linux内核中默认使用的是logo_linux_clut224.ppm这张图片,颜色深度只有224,低于8位的256,在大屏幕上会看到比较明显的失真.</p>
 
 <p>解决方案:把图片数据(原始数据),放在boot镜像中,等内核启动时直接从这里读取数据并写入到framebuffer中.考虑到扩展性,可以在内核显示logo的时候加一个判断,优先检查根文件系统中是否存在logo的数据文件,如果有则显示boot里面的logo,如果没有就继续显示内核原有的logo.</p>
 
@@ -23,7 +23,7 @@ title: android设备上使用bmp做开机logo
 
 <p>然后开始写函数的实现，这里的动作是用系统调用打开图片数据文件，获取图片的大小信息，然后根据图片大小申请内存，然后直接把数据解压到fb中，实现显示.</p>
 
-<pre><code>int fb_draw_imt_logo(struct fb_info *fi){   
+<pre><code>int fb_draw_bmp_logo(struct fb_info *fi){   
     int fd;
     int len;
     char *input;
@@ -58,7 +58,7 @@ title: android设备上使用bmp做开机logo
 //leung modify end
 </code></pre>
 
-<p>函数编写完毕之后，就找到原本的显示函数调用的地方，在那里调用自己的显示函数,比如说我找到了xx _ fb _ register()，在它里面找到了原本的显示函数fb _ show _ logo()的最终调用处;于是我作出如下修改：</p>
+<p>函数编写完毕之后，就找到原本的显示函数调用的地方，在那里调用自己的显示函数,比如说我找到了xx_fb_register()，在它里面找到了原本的显示函数fb_show_logo()的最终调用处;于是我作出如下修改：</p>
 
 <pre><code>ret = -1;
 ret = fb_draw_bmp_logo(fb_inf-&gt;fb[fb_inf-&gt;num_fb-2]);
@@ -67,7 +67,7 @@ if(ret &lt; 0) {
 }
 </code></pre>
 
-<p>然后因为我们的logo数据是放在了boot镜像中，也就是必须要等待根文件系统起来之后，我们的数据文件才能被读取，所以我们需要把fb的驱动加载优先级降低，把它延后到根文件系统那一级,可以直接在文件的末尾，找到驱动的初始化函数，修改为rootfs _ initcall(),比如说我这里的修改如下：</p>
+<p>然后因为我们的logo数据是放在了boot镜像中，也就是必须要等待根文件系统起来之后，我们的数据文件才能被读取，所以我们需要把fb的驱动加载优先级降低，把它延后到根文件系统那一级,可以直接在文件的末尾，找到驱动的初始化函数，修改为rootfs_initcall(),比如说我这里的修改如下：</p>
 
 <pre><code>//subsys_initcall_sync(xx_fb_init);
 rootfs_initcall(xx_fb_init);
@@ -106,7 +106,7 @@ $ make install
 <pre><code>$ ./ffmpeg -i test.jpg -f image2 -pix_fmt rgb565 test.raw
 </code></pre>
 
-<p>ffmpeg的参数实在是太多了，这里的-i表示输入文件，-f表示force format，image2表示输出的图片是image2包装格式，pix _ fmt表示可用的像素格式，这里用的是rgb565格式.....有兴趣的可以自己ffmpeg --help研究研究</p>
+<p>ffmpeg的参数实在是太多了，这里的-i表示输入文件，-f表示force format，image2表示输出的图片是image2包装格式，pix,bmp fmt表示可用的像素格式，这里用的是rgb565格式，是16位的图片，没有用到32位的图片是因为32位的图片数据量更大，而且16位图片与32位图片在视觉上基本无法看出差别.....关于ffmpeg的其他用法，有兴趣的可以自己ffmpeg --help研究研究</p>
 
 <p>当然了，为了更方便使用这个工具，利用脚本是一个很好的方式，我的脚本如下，功能是查找跟脚本在同一目录下的文件，把其中的bmp,jpg,png格式的文件转换成raw文件，并进行压缩，并自动拷贝到android工程的out目录.</p>
 
