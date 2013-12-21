@@ -1,0 +1,63 @@
+---
+layout: default
+title: git仓库的创建
+---
+
+<h2>git仓库的创建</h2>
+
+<p>git的整个man page似乎没必要，至少，只要掌握了基础的命令，git就已经足够让人感到满意了.</p>
+
+<h3>git仓库的创建</h3>
+
+<p>之前记录过git服务的搭建，事实上当服务跑起来之后，git已经随时可以开始工作了.首先需要的是创建自己的git仓库，之前已经克隆下来的gitolite-admin仓库这时候就会派上用场.这是管理其他git仓库的仓库. 增加，删除，修改其他的仓库都可以通过它来操作.</p>
+
+<pre><code>git clone git@gitserver:gitolite-admin.git
+cd gitolite-admin
+vim conf/gitolite.conf
+</code></pre>
+
+<p>假设需要添加一个叫myrepo的仓库，可以修改如下:</p>
+
+<pre><code>repo myrepo
+    RW+     =@admin
+    RW  dev =@all
+    R       =@all
+</code></pre>
+
+<p>这里实际上是添加了一个叫myrepo的仓库，同时配置了简单的权限控制，并增加了一个名称为dev的分支. 然后保存文件并退出，这个修改同样是需要推送到服务器上，才会生效的. 可以先执行status命令，查看当前仓库的所有修改：</p>
+
+<pre><code>git status
+</code></pre>
+
+<p>这时候可以看到conf/gitolite.conf文件的状态被改变了,接下来就是把它提交到服务器上.</p>
+
+<pre><code>git add conf/gitolite.conf
+</code></pre>
+
+<p>第一步是add命令，执行完这一步，git就会把被add的文件添加到暂存区中</p>
+
+<pre><code>git commit
+</code></pre>
+
+<p>第二步是commit命令，这一步git会要求输入一些提交信息，作为记录以及自己以后查看用.</p>
+
+<pre><code>git push origin master
+</code></pre>
+
+<p>第三步才是最重要的步骤，这一步就是推送到服务器上，这里的操作是推送到服务器上的master分支. 实际上，对于git而言，在本地做的所有操作和修改，只要没有push到服务器上，都是相当安全的. 当然，对于熟练的管理员来说，就算有人push了不干净的东西到服务器上，也是有办法回退的. 但是，git的强大绝对不是意味着可以放弃对代码的严谨态度. </p>
+
+<p>接着就可以从服务器上克隆刚刚建立的myrepo仓库了.</p>
+
+<pre><code>git clone git@gitserver:myrepo.git
+git checkout -B master
+</code></pre>
+
+<p>把仓库克隆下来之后，执行checkout命令把仓库迁出到master分支上，
+当然，这时候的仓库只是一个空仓库，就是说里面是什么都没有的.这时候开始往这里添加任何东西，然后类似上面那样执行add,commit,push等操作，事实上最简单git操作流程就已经完成了. </p>
+
+<p>至于分支，master分支这一般是作为初始的分支来用，也是主分支，当然也可以checkout出各种各样的分支.这样就会引出多分支的概念，还有创建分支，分支代码合并，合并冲突等topic.</p>
+
+<h2>{{ page.title }}</h2>
+<p>我的第一篇文章，以后就在这里做一些技术笔记啦</p>
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
