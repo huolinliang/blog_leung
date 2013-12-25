@@ -2,7 +2,6 @@
 layout: default
 title: git的随笔
 ---
-
 <h2>git的随笔</h2>
 
 <p>现在越来越发现自己的笔记太零散了，想整理简直是对自己耐心的挑战......</p>
@@ -100,6 +99,35 @@ index 6c8f795..d855c54 100644
  -- 
  1.7.9.5
 </code></pre>
+
+<p>对于用format-patch生成的补丁，可以使用git am 命令来打补丁，git会按照编号依次打上补丁.</p>
+
+<pre><code>$ git am *.patch
+</code></pre>
+
+<p>当然，比较理想的状态是一次通过，但是通常情况是有冲突的，出现冲突之后am命令可能并不会返回太多的冲突信息，这时候先手动apply；</p>
+
+<pre><code>$ git apply --reject xxxx.patch
+</code></pre>
+
+<p>apply命令会返回冲突的具体信息，可以看到冲突发生的文件，具体在什么行数，文件是否存在等等，同时它还会生成一个xxxx.rej文件，在冲突文件所在的同一目录下，里面是发生冲突的代码块，利用这个rej文件手动修改冲突文件，修改完毕之后，使用git status查看本次apply修改过的文件，然后执行 git add 添加这些文件</p>
+
+<pre><code>$ git add xxx
+</code></pre>
+
+<p>最后，使用resolved告诉git服务器，本次合并已经完成，它会自动提交到服务器上，无需再push</p>
+
+<pre><code>$ git am --resolved
+</code></pre>
+
+<p>如果中间有出现失误或者其他问题，都可以通过git reset --hard命令恢复代码</p>
+
+<p>如果使用git am命令提示类似"/.git/rebase-apply still exists but mbox given"错误，可以执行git am --abort将git恢复</p>
+
+<pre><code>$ git am --abort
+</code></pre>
+
+<p>如果合并的patch中存在当前分支没有的文件，可以手动拷贝文件过来，最后add上就好了</p>
 
 <p>Author:leung</p>
 <p>{{ page.date | date_to_string }}</p>
