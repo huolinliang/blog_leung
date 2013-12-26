@@ -1,0 +1,60 @@
+---
+layout: default
+title: 内存文件系统 
+---
+
+<h2>内存文件系统</h2>
+
+<p>在linux中可以将一部分内存加载为分区来用，可以称为内存文件系统, 基本来说就是追求极致的速度. 不过,如果有一块ssd硬盘在手上，就不用这样折腾了.但是，因为穷，所以还是折腾吧...现在越来越发现，因为穷，很多事情都会得到很好的解释了，哈哈哈，哭.</p>
+
+<p>网上出现过的使用内存文件系统的方式一般有三种：ramdisk、ramfs和tmpfs. </p>
+
+<h3>ramdisk</h3>
+
+<p>第一种ramdisk是2.2这种老内核就支持了的，它不够好的地方是大小是在编译内核的时候就固定了，之后不能改变.在编译内核的时候将block device中的ramdisk选上就可以使用它了，在编译内核的时候需要设定ramdisk的大小，默认只有可怜的4096k...改好后重新编译make内核.然后就可以创建文件系统并加载使用.</p>
+
+<pre><code>$ ls /dev/ram*
+$ mkdir /mnt/my_ramdisk
+$ mke2fs /dev/ram0
+$ mount /dev/ram0 /mnt/my_ramdisk
+</code></pre>
+
+<p>上面的命令，第一条是查看本系统中可用的ramdisk，然后创建了一个myram目录，然后在/dev/ram0创建文件系统，最后挂载/dev/ram0.完了之后就可以当它普通硬盘来使用了.</p>
+
+<h3>ramfs</h3>
+
+<p>第二种是ramfs,它不需要经过格式化，而且大小可以随需要的空间而增加或者减少. 属于虚拟文件系统层(vfs),而不是像ramdisk是基于虚拟在内存中的其他文件系统(如上面的ex2fs).因此，需要在编译内核的时候选上"Virtual memory filesystem support"，即虚拟内存文件系统支持.</p>
+
+<pre><code>$ mkdir /mnt/myram_fs
+$ mount -t ramfs none /mnt/my_ramfs
+</code></pre>
+
+<p>使用默认设置，ramfs只能使用最大内存大小的一半，个人觉得这个设置比较合理，毕竟内存也是紧缺资源，不能本末倒置.当然，极端一点的也可以使用maxsize参数来改变这个限制，以kbyte为单位.下面就是创建一个最大使用约200M的ramdisk.</p>
+
+<pre><code>$ mount -t ramfs none /mnt/my_ramfs -o maxsize=20000
+</code></pre>
+
+<h3>tmpfs</h3>
+
+<p>第三种是tmpfs,它跟ramfs一样是基于虚拟内存文件系统，但是又比ramfs还要先进一些.ramfs是基于物理内存的，就是说你使用的ramfs大小是直接占用物理内存的，对于大多数人来说，电脑估计也就4G内存的样子，实在是小水池啊.所以tmpfs改进了这一点，它既可以使用物理内存，也可以使用交换分区，虚拟内存资源由这两者共同组成，资源的分配和管理由虚拟内存子系统来负责.毫无疑问，这就是我们所需要的.</p>
+
+<pre><code>$ mkdir /mnt/my_tmpfs
+$ mount tmpfs /mnt/my_tmpfs -t tmpfs
+</code></pre>
+
+<p>同样也可以在加载时执行tmpfs的最大限制：</p>
+
+<pre><code>$ mount tmpfs /mnt/my_tmpfs -t tmpfs -o size=2048m
+</code></pre>
+
+<h3>tmpfs的调整</h3>
+
+<p>使用过程中如果感觉不够用，就用mount命令调整一下</p>
+
+<pre><code>$ mount /mnt/my_tmpfs -o remount,size=4096m
+</code></pre>
+
+<p>这样，在这些目录中访问文件，读写大文件的时候就能感觉到速度飞起来了，不过更好的用途当然是把工程放在这里编译啦.只不过需要注意的是，内存文件系统既然用到了内存的资源，那么机器重启之后，目录中的内容也是会掉电即失的.</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
