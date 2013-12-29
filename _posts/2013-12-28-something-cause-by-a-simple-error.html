@@ -1,0 +1,57 @@
+---
+layout: default
+title: 由一个简单错误引起的思考
+---
+<h2>由一个简单错误引起的思考</h2>
+
+<p>前两天，从原厂更新完一个flash驱动的补丁之后，我需要对flash进行简单的测试. 因为更新说明中提到了小数据读写的性能提升，所以我准备写个简单的shell，生成大量体积为4kb的小文件，并从pc拷贝到平板上，来测测是否有性能提升. 这个工作对shell来说相当简单</p>
+
+<pre><code>#!/bin/bash
+##################
+# build files with 4k size,to test flash speed
+##################
+set -e
+
+if [ -d ./4k-files ]; then
+rm -rf ./4k-files/*
+else
+mkdir ./4k-files
+fi
+
+file_count=1
+max_file_num=10000
+
+while [ $file_count -le $max_file_num ]; do
+    dd if=/dev/urandom of=./4k-files/$file_count bs=4k count=1
+    file_count=$(($file_count+1))
+done
+
+exit 0;
+</code></pre>
+
+<p>只需要简单地利用while循环和dd命令，这个脚本就能很快地帮我产生大量4kb大小的文件，这里给的值是10k个. 当然这个脚本是可工作的，但是我发现dd命令在这个过程中产生了海量的标准输出在我的终端上，因为我现在不是在调试阶段，所以这多少有点让人不爽.所以有必要小改造一下，把标准输出和标准错误都重定向到null中.</p>
+
+<p>曾经跟师兄写过一个脚本，也是使用dd命令，对整块flash进行疯狂的擦写，以测试稳定性.在那里我看到了一种特别的重定向写法，"2&amp;>/dev/null",于是我在这里也按照这种写法来改造我的脚本,于是我的脚本上dd命令那一行变成了这样：</p>
+
+<pre><code>dd if=/dev/urandom of=./4k-files/$file_count bs=4k count=1 2&amp;&gt;/dev/null
+</code></pre>
+
+<p>我不仅照搬了这个看起来很不符合规则的写法，而且想当然地认为这只是一种另类的，更酷的写法，因为师兄的形象在我看来是很高大上的，现实中也极少出技术上的失误.</p>
+
+<p>但是，实际上确实出问题了，修改之后脚本产生不了任何文件.之前做flash擦写的脚本之所以没有发现问题，是因为那个脚本是直接在最小文件系统中跑的，直接写入随机数据到mtd设备中，擦除整块flash.而且，按上面修改之后，确实没东西输出到屏幕上了，这可真迷惑人啊.</p>
+
+<p>一般情况下，将标准输出和标准错误重定向到null设备的写法是"1>/dev/null 2>&amp;1"这样子，或者直接"&amp;>/dev/null",在shell中，1代表标准输出，2代表标准错误，>&amp;表示将一个句柄的输出写入到另一个句柄的输入中.</p>
+
+<p>所以，脚本上的dd命令应该修改成下面这样才对：</p>
+
+<pre><code>dd if=/dev/urandom of=./4k-files/$file_count bs=4k count=1 &amp;&gt;/dev/null
+</code></pre>
+
+<p>然而，为什么"2&amp;>/dev/null"这种看起来非法的写法在程序中不会报错呢?我只是猜测bash把它扩展成了另一种形式，而导致了不输出到屏幕，也不输出到文件的结果. 我查了挺久，但是到现在我都还没找到真正的原因......</p>
+
+<p>只好暂时收手.</p>
+
+<p>just keep it in mind,and i'm sure i will come back here to answer it.</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
