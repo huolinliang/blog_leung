@@ -1,0 +1,71 @@
+---
+layout: default
+title: hello 2014
+---
+
+<h2>hello 2014</h2>
+
+<p>新年的第一天. 刚刚在整理笔记本的时候，翻到了一个有趣的文件---一份简单C代码,抽签用的.</p>
+
+<p>当时的情况应该是这样的:临近毕业，我们三个人准备合租一个屋子，里面有三个房间，size不一. 基于我们都想住在较大的房间里，所以抽签是少不了的了. 所以我当时想,何不写个简单的程序玩玩?但是因为当时在上班，加上轻微的拖延症，事实上我们使用了相当原始的方法进行了抽签......但是后来我还是抽空把想法做了个小小的实现,虽然没有用上...</p>
+
+<p>新的开始，把这个丢上博客，就当是为下一年分析更多的情况，看更多的fxxxing source code开个头吧.</p>
+
+<pre><code>/*
+just funny
+*/
+
+#include&lt;stdlib.h&gt;
+#include&lt;stdio.h&gt;
+#include&lt;time.h&gt;
+#define Player1 "hungcen"
+#define Player2 "leung"
+#define Player3 "zhong"
+
+int main(void)
+{
+    int p1=888,p2=888,p3=888;//whatever
+    /*
+    可以手动输入随机数种子，否则默认采用的是当前计算机时间time(0)
+    int k;
+    printf("input a rand seed:");
+    scanf("%d",&amp;k);
+    srand(k);
+    */
+    srand((int)time(0));
+    while(p1==p2||p1==p3||p2==p3)
+    {      
+        p1=1+(int)(3.0*rand()/(RAND_MAX+1.0));
+        p2=1+(int)(3.0*rand()/(RAND_MAX+1.0));
+        p3=1+(int)(3.0*rand()/(RAND_MAX+1.0));
+    }
+    output(p1);
+    printf(" is for %s\n",Player1);
+    output(p2);
+    printf(" is for %s\n",Player2);
+    output(p3);
+    printf(" is for %s\n",Player3);
+    return 0;
+}
+
+int output(int m)
+{   
+    if(m==1)
+    printf("big room");
+    if(m==2)
+    printf("mid room");
+    if(m==3)
+    printf("small room");
+    return 0;
+}
+</code></pre>
+
+<p>看到这种碎片似的代码，才知道毕业到现在半年已经过去了，真是觉得一晃眼而已呢...过去半年，小伙伴们都在不断地尝试和成长;而我过去半年，在师兄的指点下也接触到了一些新的东西.在新的一年，期望更大的进步.</p>
+
+<p>done.</p>
+
+<p>ps:昨晚的元旦聚餐真心不错,更期待下一次的桌球pk，白石洲vs桂庙路口，哈哈</p>
+<p>pps：昨晚的跨年电话，it's great to hear you</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
