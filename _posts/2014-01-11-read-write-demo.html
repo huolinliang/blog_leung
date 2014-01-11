@@ -1,0 +1,113 @@
+---
+layout: default
+title: read write demo
+---
+
+<h2>read write demo</h2>
+
+<p>当需要操作硬件设备的时候，通常的做法是在内核空间里面编写符合内核接口的程序，也就是写驱动了. 但是如果内核中的驱动已经基本ready，设备节点已经生成，那么在用户层面控制硬件或许更方便.很多时候，把一些非核心的功能从内核中去掉，只提供基本的接口出来，然后在用户层编写程序调用自己的接口，这种做法也是不错的选择.这样既可以进行更丰富的操作，又避免了驱动程序变得臃肿. 而且，个人感觉在用户空间编程也更灵活一些.</p>
+
+<p>这两天在搞一个测试pcba上的器件是否正常的代码，用于在pcba生产完之后的第一次基本测试，原厂的sdk中已经提供了一套基本可用的架构，但是功能不能完全满足我们的需求，所以我需要对它进行一些扩展，添加新的测试项目，如测试背光能否调节，sim卡能否正常工作，等. 这个测试工具是存在于recovery中，由于recovery中包含kernel，所以进入这个测试模式后，实际上该有的驱动都已经加载完毕，剩下的就如上面所说，想测试什么功能，直接调用接口就行了.</p>
+
+<p>在这个过程中，我发现操作模式都大同小异，我完全可以写一个基本的demo放着，以后参考着来扩展就差不多了.</p>
+
+<p>demo的场景：假设在当前路径下，存在一个名为dir-test的设备目录，这个目录下会存在两个子目录，分别叫dir0和dir1，两个子目录下还都存在自己的三个文件，分别是file0、file1和parameter，假设parameter是这个驱动的配置文件.  现在编写一个程序去扫描dir-test整个目录，找到里面的每个子目录，并读取子目录中的配置文件parameter里面的内容，根据里面的内容来做下一步的策略.</p>
+
+<p>比如这里的策略是：假设工作正常的情况下，parameter中的内容要么是"file0"，要么是"file1". 当我在某个子目录的parameter中读到"file0"，我就往同一目录下的file0文件写入某个字符串;如果在parameter中读到的是"file1"，就往file1中写入另一个字符串;如果在parameter中读到的是其他的内容，就返回"error data"，并跳过这个子目录. 这样，就模拟了完整的读写过程. </p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;dirent.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;fcntl.h&gt;
+
+#define test_dir "./dir-test"
+
+// read from file
+static int readFromFile(const char* path, char* buf, size_t size)
+{
+    if (!path)
+        return -1;
+    int fd = open(path, O_RDONLY, 0);
+    if (fd &lt; 0) {
+        printf("can not open file\n");
+        return -1;
+    }
+    ssize_t count = read(fd, buf, size);
+    if (count &gt; 0) {
+        while (count &gt; 0 &amp;&amp; buf[count-1] == '\n')
+            count--;
+            buf[count] = '\0';
+    }
+    else {
+        buf[0] = '\0';
+    }
+    close(fd);
+    return count;
+}
+
+int main(int argc, char *argv[])
+{
+    DIR *dir;
+    struct dirent *ptr;
+    int i;
+    int fd, fdd;
+    char path[PATH_MAX];
+    dir = opendir(test_dir);
+    while((ptr = readdir(dir)) != NULL) {
+        // ignore "." and ".."
+        const char* name = ptr-&gt;d_name;
+        if (name[0] == '.' &amp;&amp; (name[1] == 0 || (name[1] == '.' &amp;&amp; name[2] == 0))) {
+            continue;
+        }
+
+        printf("dir_name:%s\n", ptr-&gt;d_name);
+
+        char buf[512];
+        char s[] = "hahahaha wrote in file0\n";
+        char ss[] = "hahahaha wrote in file1\n";
+        // find file1 in each subdir
+        snprintf(path, sizeof(path), "%s/%s/parameter",test_dir, name);
+        int length = readFromFile(path, buf, sizeof(buf));
+
+        if (length &gt; 0) {
+            if (buf[length - 1] == '\n')
+                buf[length -1] = 0;
+
+            fd = open(path, O_WRONLY, 0);
+            if (fd &lt; 0) {
+                printf("can not open file\n");
+                return -1;
+            }
+
+            // judge whether file0 or file1
+            if(strcmp(buf, "file0") == 0) {
+                snprintf(path, sizeof(path), "%s/%s/file0", test_dir,name);
+                fdd = open(path, O_WRONLY|O_APPEND, 0);
+                write(fdd, s, sizeof(s)-1);
+                length = readFromFile(path, buf, sizeof(buf));
+                printf("%s\n",buf);
+            }
+            else if(strcmp(buf, "file1") == 0) {
+                snprintf(path, sizeof(path), "%s/%s/file1", test_dir,name);
+                fdd = open(path, O_WRONLY|O_APPEND, 0);
+                write(fdd, ss, sizeof(ss)-1);
+                length = readFromFile(path, buf, sizeof(buf));
+                printf("%s\n",buf);
+            }
+            else {
+                printf("error data\n");
+                continue;
+            }
+        }
+    }
+    closedir(dir);
+    return 0;
+}
+</code></pre>
+
+<p>在实际运行时，发现默认读取目录时会包含"."和".."两项，这两个分别代表当前目录和上一级目录，对我们来说，这是冗余项，所以中间读取完目录后，先做了一个判断，直接ignore了这两项.</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
