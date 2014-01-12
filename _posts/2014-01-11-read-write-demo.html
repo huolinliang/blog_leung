@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
         char buf[512];
         char s[] = "hahahaha wrote in file0\n";
         char ss[] = "hahahaha wrote in file1\n";
-        // find file1 in each subdir
+        // find parameter in each subdir
         snprintf(path, sizeof(path), "%s/%s/parameter",test_dir, name);
         int length = readFromFile(path, buf, sizeof(buf));
 
