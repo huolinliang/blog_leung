@@ -1,0 +1,163 @@
+---
+layout: default
+title: 奇偶数校验 
+---
+
+<h2>奇偶数校验</h2>
+
+<p>能把这个标题放到博客上，是需要一些勇气的。。。</p>
+
+<p>是之前在网上，偶然发现一个奇偶数校验的代码，我当时也懵了一下。。奇偶数校验?...直接对2取余，然后判断是否为0不就完事了么。再看下去，发现原来那是基于神经网络理论做的一个简单demo，对机器进行训练，从而让它能在一定范围内判断奇偶数。突然就觉得奇偶数判断也高大上起来了。</p>
+
+<p>再翻下去，发现神经网络相关的东西完全是一个小宇宙。。。然后看到数学的那部分，就开始吃不消了。。</p>
+
+<p>anyway，既然遇到了一个demo，哪有不搬过来跑跑的道理，原本的代码是对20以内自然数进行判断，为了做更多的test，我对代码稍微修改了一下，让它能进行0到65535之间的奇偶数判断，这样感觉更好玩一些。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;time.h&gt;
+
+#define max_num 65535
+int M[max_num];
+int X[max_num];
+int Y[max_num];
+int O[max_num];
+int ST=52;
+
+/*初始化权值*/
+void initM()
+{
+    int x=0;
+    srand((unsigned int)time(0));
+    for(x=0;x&lt;max_num;x++)
+    {
+        M[x]=rand()%100;
+    }
+}
+
+/*初始化输入向量*/
+void initX()
+{
+    int x;
+    for(x=0;x&lt;max_num;x++)
+        X[x]=x+1;
+}
+
+/*初始化理想输出向量*/
+void initY()
+{
+    int y;
+    for(y=0;y&lt;max_num;y++)
+        Y[y]=(y+1)%2;
+}
+
+/*迁跃型函数*/
+int active(int m, int x)
+{
+    int o=m*x;
+    if(o&gt;ST)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+/*计算输出*/
+void calcY()
+{
+    int x;
+    for(x=0;x&lt;max_num;x++)
+    {
+        O[x]=active(M[x],X[x]);
+    }
+}
+
+/*根据输出的向量和理想输出向量比较，不断调整权重*/
+int adjustM()
+{
+    int err=0;
+    int x;
+    for(x=0;x&lt;max_num;x++)
+    {
+        if(O[x]!=Y[x])
+        {
+            err++;
+            if(0==O[x])
+            {
+                M[x]+=X[x];
+            }else {
+                M[x]-=X[x];
+            }
+        }
+    }
+    return err;
+}
+
+/*打印权重*/
+void printM()
+{
+    int x=0;
+    for(x=0;x&lt;max_num;++x)
+    {
+        printf("M[%i]=%i\n",x,M[x]);
+    }
+}
+
+void test(int input)
+{
+    printf("M[%d]=%i X[%d]=%i\n",input,M[input],input,X[input]);
+    if(active(M[input],X[input]))
+    {
+        printf("%d 是偶数\n", input);
+    }else{
+        printf("%d 是奇数\n", input);
+    }
+}
+
+int main()
+{
+    int n=0;
+
+    initM();
+    initX();
+    initY();
+
+    /*死循环训练，直到err为0*/
+    while(1)
+    {
+        n++;
+        calcY();
+        int err=adjustM();
+        if(0&gt;=err)
+        {
+            break;
+        }
+        printf("错误数 %d\n",err);
+    }
+    printM();
+    printf("阀值 %d 训练次数 %d\n",ST,n);
+
+    /*死循环询问，接收输入并test，然后给出结果*/
+    while(1)
+    {
+        int a=0;
+        scanf("%i",&amp;a);
+        if(0&gt;a || max_num-1&lt;a)
+        {
+            break;
+        }
+        test(a);
+    }
+    return 0;
+}
+</code></pre>
+
+<p>运行的时候，机器开始打印错误数，一开始量比较大，然后错误数逐渐减少，最后错误数为0，机器就具备了判断0到65535之间奇偶数的能力了，有点神奇啊。</p>
+
+<p><img src="../../../images/odd-even-judge.jpg" alt="运行结果" title="运行结果"></p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
