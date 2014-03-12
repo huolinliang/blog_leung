@@ -1,0 +1,168 @@
+---
+layout: default
+title: C语言中结构体与联合体的内存字节对齐问题
+---
+
+<h2>C语言中结构体与联合体的内存字节对齐问题</h2>
+
+<p>最近看了一篇，“我们经常做错的C语言题目”，里面有一题是关于结构体与联合体的内存字节对齐问题，一不留神果然做错了。。。</p>
+
+<p>机器系统是64位ubuntu，编译器是gcc 4.6.3。</p>
+
+<p>假设我们都知道，结构体在内存中占的字节大小是结构体内各成员所占内存大小之和，而联合体在内存中占的字节大小等于联合体中占内存最大的成员的大小。</p>
+
+<h3>结构体内存对齐</h3>
+
+<p>但是，如果忽略了内存字节对齐，那就容易出问题了。。。例如下面的test代码：</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+struct one
+{
+    char a;
+    char b;
+    short c;
+    double d;
+};
+
+struct two
+{
+    char a;
+    char b;
+    double d;
+    short c;
+};
+
+int main()
+{
+    printf("size of struct one = %d\n", sizeof(struct one));
+    printf("size of struct two = %d\n", sizeof(struct two));
+    return 0;
+}
+</code></pre>
+
+<p>结构体one跟结构体two中的成员个数和类型都是相同的，但是声明的顺序不一样。假设已经知道各个类型所占内存大小，char是1，short是2，double是8。</p>
+
+<p>那么char+char+short+double=12字节，对么？ 那么结构体two的大小等于结构体one的大小，对么？</p>
+
+<p>这是在废话么。。。对的话就不会掉坑里了。。。打印结果是：</p>
+
+<p><img src="../../../images/sizeof-1.jpg" alt="sizeof-1.jpg" title=""></p>
+
+<p>真相应该是这样的，结构体one前三个成员加起来是1+1+2=4字节无疑，但是到了double类型，占8字节，它在内存中的起始地址必须是8字节对齐，类似0..8..16..24..这样，而前面总共花了0～3，共4个字节，那么接下来的4～7这4个字节是不满足double类型的内存起始条件的，因此这里填充4个字节，因此总的内存占用为1+1+2+(4)+8=16字节。结构体还需要检查整体对齐，就是对结构体内最大的类型对齐，这里最大的是double类型，占8字节，因此需要8字节对齐。刚好这里算出来是16字节，已经是8字节对齐了，无需进行扩充。</p>
+
+<p>而对于结构体two，情况也是类似的。前两个char成员加起来是2字节无疑，但是接下来的6个字节是不满足double的内存对齐条件的，因此这里填充了6个空字节。然后再下面是一个short类型，前面共占去了0～15这些字节，下一个是16，刚好满足short类型的2字节对齐条件，因此也不需要填充。所以two的大小等于1+1+(6)+8+2=18字节，但是还有整体对齐，这里同样需要8字节对齐，显然这里是由18字节填充到了24字节。</p>
+
+<h3>联合体内存对齐</h3>
+
+<p>上面是struct的内存对齐基本情况。再来看另一种经常跟struct玩的数据类型union，即联合体。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+union one
+{
+    long i;
+    int k[5];
+    char c;
+};
+
+union two
+{
+    long i;
+    int k[6];
+    char c;
+};
+
+int main()
+{
+    printf("size of union one = %d\n", sizeof(union one));
+    printf("size of union two = %d\n", sizeof(union two));
+    return 0;
+}
+</code></pre>
+
+<p>直接上结果，你会看到这两个不一样的联合体所占的内存大小是一样的</p>
+
+<p><img src="../../../images/sizeof-2.jpg" alt="sizeof-2.jpg" title=""></p>
+
+<p>联合体比结构体简单一些，一个联合体在内存中所占的大小取决于它最大的成员所占的大小，然后跟结构体一样，也要进行整体上的内存对齐。</p>
+
+<p>联合体one的成员中int k[5]，是数组而不是单个的成员，它在内存中的大小显然是最大的，共占4x5=20字节，然后这里面数据类型最大的是long类型，因此需要跟long类型的大小对齐，也就是8字节对齐，所以这里需要扩充到24字节。</p>
+
+<p>联合体two跟联合体one非常相似，只是这里是int k[6]，共占4x6=24字节，这里同样要跟long类型的大小对齐，刚刚好24已经是8字节对齐，所以无需扩充，维持24字节。</p>
+
+<p>因此就解释了为何这两个联合体所占的内存大小是一样的。</p>
+
+<h3>结构体内嵌套联合体，内存对齐</h3>
+
+<p>结构体内嵌套联合体，test代码：</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+typedef union 
+{
+    long i;
+    int k[5];
+    char c;
+}DATE;
+
+struct one 
+{
+
+    char a;
+    char b;
+    DATE cow;
+    double e;
+    short d;
+};
+
+struct two 
+{
+
+    char a;
+    DATE cow;
+    char b;
+    double e;
+    short d;
+};
+
+int main()
+{
+    DATE max;
+    printf("size of struct one = %d\n", sizeof(struct one));
+    printf("size of struct two = %d\n", sizeof(struct two));
+    return 0;
+}
+</code></pre>
+
+<p>上结果：</p>
+
+<p><img src="../../../images/sizeof-3.jpg" alt="sizeof-3.jpg" title=""></p>
+
+<p>看到了结果，两者喜闻乐见地是不一样的。这里是要算得小心一点了，两个结构体的区别还是只在于成员的排列顺序上，因此依然是字节对齐的问题。</p>
+
+<p>开始计算，对于struct one，前面两个char各占1个字节无误，重点是接下来的DATE cow，DATE在这里是union的别名，这个union我们上面已经知道是占24字节的大小，对于嵌套的union，该如何对齐呢？答案是对union里面最大的家伙对齐！所以struct one所占字节大小等于1+1+(6)+24+8+2=42字节，然后struct整体还需要对最大的成员大小对齐，这里露过脸的类型中最大的是long和double，是8字节，因此42字节要8字节对齐，显然需要扩充到48字节。</p>
+
+<p>类似，struct two就好分析了，直接写计算过程：1+(7)+24+1+(7)+8+2=50字节，同样这里是8字节对齐，50字节需要扩充到56字节。</p>
+
+<h3>总结</h3>
+
+<p>结构体的内存对齐：</p>
+
+<ul>
+<li>总大小是各个成员所占大小累计起来的</li>
+<li>每个成员之间都有可能需要填充空字节，以满足成员的起始地址对齐</li>
+<li>总大小在累计完毕后，还需要跟最大的成员做对齐</li>
+</ul>
+
+<p>联合体的内存对齐：</p>
+
+<ul>
+<li>总大小取决于成员中最大者所占大小</li>
+<li>总大小需要跟最大的成员做对齐</li>
+</ul>
+
+<p>仅实验经验，仅参考。</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
