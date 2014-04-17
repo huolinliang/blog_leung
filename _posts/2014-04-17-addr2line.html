@@ -1,0 +1,105 @@
+---
+layout: default
+title: android中使用addr2line工具查so库错误
+---
+
+<h2>android中使用addr2line工具查so库错误</h2>
+
+<p>对android设备debug的时候，如果是内核报错，空指针之类的，会看到非常详细的堆栈信息，跟着信息就可以顺藤摸瓜去翻源码，然后检查代码。</p>
+
+<p>但是如果是动态库错误的话，通常能返回的就是报错的内存地址信息，直接看log是看不出问题的，这时候就应该借助工具了。</p>
+
+<p>addr2line是一个不错的工具，满足一定条件下，它可以根据报错的内存地址信息反查出对应在源代码的行数。</p>
+
+<p>需要满足的条件是：代码需要是带-g参数编译的，这样才会带调试器可利用的信息。</p>
+
+<p>在android的sdk中已经包含这个工具，路径是 prebuilts/tools/gcc-sdk/addr2line</p>
+
+<p>假设我们抓到了以下的log，留意关键字pc，pc就是程序计数器，后面跟的实际就是内存地址</p>
+
+<pre><code>I/DEBUG   (  101):     #00  pc 00b24f72  /system/lib/libwebviewchromium.so
+</code></pre>
+
+<p>那么直接在工程根目录下执行</p>
+
+<pre><code> ./prebuilts/tools/gcc-sdk/addr2line -e out/target/product/xxx/system/lib/libwebviewchromium.so 00b24f72
+</code></pre>
+
+<p>假设顺利的话，addr2line工具就会在终端返回类似以下的信息，是代码的绝对路径+报错的行数</p>
+
+<pre><code>/home/leung/mid/pure_project/rk3188_mid_4.4.2/external/chromium_org/cc/trees/ layer_tree_host_impl.cc:2414
+</code></pre>
+
+<p>到此，基本就可以知道到哪去检查错误了。</p>
+
+<p>----------------------------------------我是分割线----------------------------------------</p>
+
+<p>抓log的时候，错误通常都是大面积的。如下。。。</p>
+
+<p><img src="../../../images/addr2line.png" alt="addr2line-log-info" title=""></p>
+
+<p>相信我，花点时间写个shell，进行一些自动化的处理是值得的。根据上面的addr2line调用方法以及报错的信息，其实我们调用addr2line对so库排查需要的东西就两样，so库的路径和地址信息。我们直接把抓到的log信息保存到一个文件中，再作为参数传进shell脚本中分析，然后在shell脚本中循环执行，那么就可以实现自动化处理了。或者说，半自动化。</p>
+
+<p>下面是我的脚本，虽然不太智能，但在android源码环境下已经可用。</p>
+
+<pre><code>#!/bin/bash
+
+############################################################################################################
+# version:v0.1
+# author:leung
+# 该脚本的目的是希望利用addr2line工具，从so库的报错信息中，找出对应在源码中的错误位置
+# 该脚本应当运行在android的根目录，并且预先执行source xxx和lunch xxx命令
+# 把报错信息按一定格式保存到一个文件中，然后在执行该脚本时作为参数传进去运行，如./addr2line.sh log.tmp
+# 错误信息的文本格式请参考log.tmp文件
+#
+# 该脚本的期望只是半自动使用addr2line工具，有啥疑难杂症，请回归手动,useage参考如下：
+# ./prebuilts/tools/gcc-sdk/addr2line -e xxx.so 0011baba
+############################################################################################################
+
+set -e
+
+if [ ! $1 ]; then
+    echo "you should run this like './addr2line.sh xxxx'"
+    exit -1
+else
+    filename="$1"
+fi
+
+if [ ! $OUT ]; then
+    echo "you should source and lunch a product first!"
+    exit -1
+fi
+
+line_num=$(cat $filename | wc -l)
+addr_length=8    #默认地址为64位，例如00b2c931
+output_file="$filename.out"
+
+cp $filename $filename.out
+echo -e "\n" &gt;&gt; $output_file
+
+count=1
+tc1=$(date +%s)
+while [ $count -le $line_num ];
+do
+    each_line=$(cat $filename | sed -n $count'p')      
+    position=$(($(expr index "$each_line" "pc")+3))    #确定报错内存地址信息在字符串中的位置,以pc作为关键字
+    addr_data=$(expr substr "$each_line" $position $addr_length)  #提取子字符串并保存
+    check_so=${each_line:$(($position+10))}     #提取so库的路径信息
+    check_so=$OUT/symbols/$check_so             #对路径信息补全,使用完整的绝对路径
+    if [ ! -f $check_so ]; then
+        echo "$check_so not found" &gt;&gt; $output_file
+        count=$(($count+1))
+        continue
+    fi
+    ./prebuilts/tools/gcc-sdk/addr2line -e $check_so $addr_data &gt;&gt; $output_file    #利用addr2line工具分析
+    count=$(($count+1))
+done
+tc2=$(date +%s)
+echo -e "\n\t done.\n\t it takes $(($tc2 - $tc1)) seconds."
+echo -e "\t output file: $output_file\n"
+
+exit 0
+</code></pre>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
