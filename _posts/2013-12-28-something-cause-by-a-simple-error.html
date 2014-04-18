@@ -57,7 +57,7 @@ exit 0;
 
 <p>似乎上面的疑问又有了一些想法了</p>
 
-<p>2&amp;>/dev/null这种形式应该分开来看待，首先2后面没有跟&amp;这种规则，所以这里dd是直接报错了，但是很可惜，因为接着下来的&amp;>/dev/null又把这个报错信息给重定向了.重新做个试验就知道了：
+<p>2&amp;>/dev/null这种形式应该分开来看待，首先2后面没有跟&amp;这种规则，所以这里dd是直接报错了，但是很可惜，因为接着下来的&amp;>/dev/null又把这个报错信息给重定向了.重新做个试验就知道了：</p>
 
 <pre><code>dd if=/dev/urandom of=./4k-files bs=4k count=1 &amp;&gt;./dd.out</code></pre>
 
