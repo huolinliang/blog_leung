@@ -91,7 +91,7 @@ header h2 {
 
 .inner {
   position: relative;
-  width: 1280px;
+  width: 1200px;
   margin: 0 auto;
 }
 
@@ -101,7 +101,7 @@ header h2 {
 }
 
 #main-content {
-  width: 1030px;
+  width: 950px;
   float: left;
 }
 
