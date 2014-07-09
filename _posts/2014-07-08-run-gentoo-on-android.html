@@ -1,24 +1,26 @@
 ---
 layout: default
-title: 在android上跑gentoo linux
+title:在android上跑gentoo linux
 ---
 
 <h2>在android上跑gentoo linux</h2>
 
-<p>一个有趣的项目，叫<a href="linuxonandroid.org">linuxonandroid</a>，得益于他们的工作，我们可以在android设备上比较随意地运行几种不同的linux发行版，目前包括ubuntu，debian，archlinux，kali linux，fedora，openSUSE这几种。</p>
+<p>一个有趣的项目，叫<a href="http://linuxonandroid.org">linuxonandroid</a>，得益于他们的工作，我们可以在android设备上比较随意地运行几种不同的linux发行版，目前包括ubuntu，debian，archlinux，kali linux，fedora，openSUSE这几种。</p>
 
 <p>大体的方法是通过chroot，切换到新系统的根下，使用一套与原系统隔离的目录结构，这样就可以在不影响android自身的前提下，使用linux系统。</p>
 
-<p>对于<a href="linuxonandroid.org">linuxonandroid</a>目前支持的发行版，可以直接在其官网下载页面<a href="linuxonandroid.org/downloads">linuxonandroid.org/downloads</a>上下载它们的一个名为"Complete Linux Installer.apk"，以及打包好的发行版镜像。apk直接安装到有root权限的android设备上，发行版镜像包拷贝到设备的sdcard中，然后点击apk进行操作即可。</p>
+<p>对于<a href="http://linuxonandroid.org">linuxonandroid</a>目前支持的发行版，可以直接在其官网下载页面<a href="http://linuxonandroid.org/downloads">linuxonandroid.org/downloads</a>上下载它们的一个名为"Complete Linux Installer.apk"，以及打包好的发行版镜像。apk直接安装到有root权限的android设备上，发行版镜像包拷贝到设备的sdcard中，然后点击apk进行操作即可。</p>
 
 <p>如果希望在android设备上玩gentoo，目前linuxonandroid是还没有支持的。但是借助于linuxonandroid的工作，以及他们的启动脚本，我们可以自己参考着做一个类似的chroot脚本，做一些挂载和写环境变量等工作，这样也可以切换到gentoo linux系统中。只不过没有gui，只能在电脑上通过usb连接到android设备，再进行命令行操作了。But anyway，毫无疑问我们是可以切到gentoo linux的。</p>
 
 <h3>操作过程</h3>
 
-<p>有几点要求：
-* android设备必须有root权限
+<p>有几点要求：</p>
+
+<pre><code>* android设备必须有root权限
 * 你的pc工作于linux环境下，可以进行稳定的adb连接
-* android设备中需要有busybox工具，如果没有，可以从<a href="https://busybox-android.googlecode.com/svn/trunk/binaries/busybox1.20.2">这里</a>下载，备用</p>
+* android设备中需要有busybox工具，如果没有，可以从[这里](https://busybox-android.googlecode.com/svn/trunk/binaries/busybox1.20.2)下载，备用
+</code></pre>
 
 <p>首先用dd工具生成一个镜像文件，这里block大小为1MB，生成大小为3GB的镜像</p>
 
@@ -121,8 +123,9 @@ chmod 777 boot.sh
 <p>不过这确实是有点简陋呢，只有命令行，这这是个基本系统，很多工具都还没安装，而android设备的性能毕竟有限，个人觉得也就适合折腾一下了。</p>
 
 <p>以上内容整理自linuxonandroid和Hammad Mazhar的相关博客和主页，感谢他们的付出。
-<a href="linuxonandroid.org">linuxonandroid.org</a>
+<a href="http://linuxonandroid.org">linuxonandroid.org</a>
 <a href="http://hamelot.co.uk/android/run-gentoo-on-android-via-chroot/">http://hamelot.co.uk/android/run-gentoo-on-android-via-chroot/</a></p>
 
 <p>Author:leung</p>
 <p>{{ page.date | date_to_string }}</p>
+
