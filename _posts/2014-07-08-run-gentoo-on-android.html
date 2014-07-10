@@ -19,9 +19,10 @@ title: 在android上跑gentoo linux
 
 <pre><code>* android设备必须有root权限
 * 你的pc工作于linux环境下，可以进行稳定的adb连接
-* android设备中需要有busybox工具，如果没有，可以从[这里](https://busybox-android.googlecode.com/svn/trunk/binaries/busybox1.20.2)下载，备用
+* android设备中需要有busybox工具
 </code></pre>
 
+<p>busybox工具可以从[这里](https://busybox-android.googlecode.com/svn/trunk/binaries/busybox1.20.2)下载</p>
 <p>首先用dd工具生成一个镜像文件，这里block大小为1MB，生成大小为3GB的镜像</p>
 
 <pre><code>dd if=/dev/zero of=gentoo.img bs=1M count=0 seek=3027
@@ -120,7 +121,7 @@ chmod 777 boot.sh
 
 <p>到这一步，就大功告成了，已经成功chroot到gentoo系统中了，已经可以做基本的操作了。</p>
 
-<p>不过这确实是有点简陋呢，只有命令行，这这是个基本系统，很多工具都还没安装，而android设备的性能毕竟有限，个人觉得也就适合折腾一下了。</p>
+<p>不过这确实是有点简陋呢，只有命令行，这只是个基本系统，很多工具都还没安装，使用gentoo系统很多时候是需要进行编译的，而android设备的性能毕竟有限，个人觉得也就适合折腾一下了。</p>
 
 <p>以上内容整理自linuxonandroid和Hammad Mazhar的相关博客和主页，感谢他们的付出</p>
 <p><a href="http://hamelot.co.uk/android/run-gentoo-on-android-via-chroot/">http://hamelot.co.uk/android/run-gentoo-on-android-via-chroot/</a>
