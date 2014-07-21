@@ -1,0 +1,111 @@
+---
+layout: default
+title: 在pcba-test模式中控制gpio
+---
+
+<h2>在pcba-test模式中控制gpio</h2>
+
+<p>在工厂测试固件中，基本的操作其实就是在用户空间操作底层设备文件，从而控制特定的硬件，从而判断平板上的器件是否能工作，这样就能在贴片之后，组装之前，简单地检测出虚焊，不良物料引起的问题。</p>
+
+<p>假如现在需要控制的不是某个模块，而仅仅是某个gpio口，那就要做点别的事情了。</p>
+
+<p>内核中，并不存在直接操作某个gpio口的设备文件，实际上也不可能存在，因为gpio口太多了。但是，内核中有一个通用的gpio操作接口，路径在"/sys/class/gpio"。内核中一般直接支持，如果没有这个目录，那就在编译内核的时候选上CONFIG<em>GPIO</em>SYSFS即可。</p>
+
+<h2>gpio目录说明</h2>
+
+<ul>
+<li>/sys/class/gpio/export，往该文件中写入gpio口的编号，内核就会导出需要控制的gpio口</li>
+<li>/sys/class/gpio/unexport，与export作用相反，取消导出</li>
+<li>/sys/class/gpio/gpiochipxxx，这些目录有多少个表明系统中存在的gpio有多少组gpio，起始编号等等</li>
+<li>/sys/class/gpio/gpioxxx，这种目录(注意区分上面的gpiochipxxx)是通知内核导出之后才会产生的，里面有控制某个被导出的gpio的接口</li>
+<li>/sys/class/gpio/gpioxxx/direction，往该文件中写入特定参数，就可以控制gpio的状态，可接受的参数有in，out，high，low，其中high/low会直接设置为out，并将gpio的value设为1/0</li>
+</ul>
+
+<h2>关于编号的计算</h2>
+
+<p>计算引脚编号并不复杂，举个例子，在rk3188中有四组gpio，分别是GPIO0到GPIO3，在/sys/class/gpio目录下，我们已经看到四个目录，分别是gpiochip160，gpiochip192，gpiochip224，gpiochip256。</p>
+
+<p>从这里我们可以得到几个信息，四组gpio对应的起始编号可以知道，分别是160，191，224，256；每组gpio的数量可以知道，不超过32个；所以最小的gpio编号就是160，最大的编号应该256+32=288。</p>
+
+<p>假设我需要控制的gpio口是RK30_PIN3_PD4，那么就应该是属于GPIO3，属于第四组，那么显然起始编号是256。然后查看各个平台的gpio定义，如kernel/arch/arm/mach-rk30/include/mach/gpio.h，里面会有gpio的编号定义，截取一些片段：</p>
+
+<pre><code>#define RK30_PIN3_PC7       (3*NUM_GROUP + PIN_BASE + 23)
+#define RK30_PIN3_PD0       (3*NUM_GROUP + PIN_BASE + 24)
+#define RK30_PIN3_PD1       (3*NUM_GROUP + PIN_BASE + 25)
+#define RK30_PIN3_PD2       (3*NUM_GROUP + PIN_BASE + 26)
+#define RK30_PIN3_PD3       (3*NUM_GROUP + PIN_BASE + 27)
+#define RK30_PIN3_PD4       (3*NUM_GROUP + PIN_BASE + 28)
+</code></pre>
+
+<p>这里需要关心的，只是某个gpio口相对于起始编号的偏移即可，还是上面说到的RK30_PIN3_PD4，NUM_GROUP=32，PIN_BASE=160，实际上3*NUM_GROUP+PIN_BASE=256，就是上面看到的四个起始编号的最后一个，然后偏移是28，所以RK30_PIN3_PD4的gpio编号等于256+28=284</p>
+
+<h2>必要的东西已经准备好</h2>
+
+<p>接下来，就可以写个简单的程序控制gpio了，</p>
+
+<pre><code>#define LOG_TAG "Moto"
+
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;string.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;linux/ioctl.h&gt;
+#include &lt;pthread.h&gt;
+#include "language.h"
+#include "test_case.h"
+#include "moto_test.h"
+
+#define MOTO_GPIO_NUM        "284"
+#define SYS_GPIO_PATH    "/sys/class/gpio/export"
+#define MOTO_GPIO_PATH    "/sys/class/gpio/gpio284/direction"
+#define HIGH_VALUE        "high"
+#define LOW_VALUE         "low"
+
+void* moto_test(void *argv)
+{
+    int ret;
+    int result;
+    int fd, fdd;
+    int value;
+    char buffer[3];
+    struct testcase_info *tc_info = (struct testcase_info*)argv;
+    ui_print_xy_rgba(0,get_cur_print_y(),0,255,0,255,"%s:[%s]\n",PCBA_MOTO,"自动模式");
+
+    if(tc_info-&gt;y &lt;= 0)
+        tc_info-&gt;y  = get_cur_print_y();
+
+    fdd = open(SYS_GPIO_PATH, O_WRONLY);
+    if (fdd &lt; 0)
+        printf("open %s failed\n", SYS_GPIO_PATH);
+    else
+    ret = write(fdd, MOTO_GPIO_NUM, sizeof(MOTO_GPIO_NUM));
+
+    for(;;)
+    {
+        fd = open(MOTO_GPIO_PATH, O_RDWR);
+        if (fd &lt; 0){
+            printf("open %s failed\n", MOTO_GPIO_PATH);
+            ui_print_xy_rgba(0,tc_info-&gt;y,255,0,0,255,"%s:[%s]\n",PCBA_MOTO,"启动失败");
+            tc_info-&gt;result = -1;
+            return argv;
+        }
+
+        value = write(fd, HIGH_VALUE, sizeof(HIGH_VALUE));
+        sleep(2);
+        value = write(fd, LOW_VALUE, sizeof(LOW_VALUE));
+        sleep(2);
+        close(fd);
+    }
+    return argv;
+}
+</code></pre>
+
+<p>上面是基于rk的pcba test框架写的一个gpio控制，就是按照上面说的，首先往export文件中写入一个gpio编号，等内核导出该gpio口之后，直接往相应的direction文件写入high或者low参数，即可实现控制。这里具体是控制一个外接的马达，让它每隔2秒震动一次。</p>
+
+<p>详细可见:https://github.com/huolinliang/rk-pcba-test-addition</p>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
