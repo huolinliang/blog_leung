@@ -9,7 +9,7 @@ title: 在pcba-test模式中控制gpio
 
 <p>假如现在需要控制的不是某个模块，而仅仅是某个gpio口，那就要做点别的事情了。</p>
 
-<p>内核中，并不存在直接操作某个gpio口的设备文件，实际上也不可能存在，因为gpio口太多了。但是，内核中有一个通用的gpio操作接口，路径在"/sys/class/gpio"。内核中一般直接支持，如果没有这个目录，那就在编译内核的时候选上CONFIG<em>GPIO</em>SYSFS即可。</p>
+<p>内核中，并不存在直接操作某个gpio口的设备文件，实际上也不可能存在，因为gpio口太多了。但是，内核中有一个通用的gpio操作接口，路径在"/sys/class/gpio"。内核中一般直接支持，如果没有这个目录，那就在编译内核的时候选上CONFIG_GPIO_SYSFS即可。</p>
 
 <h2>gpio目录说明</h2>
 
@@ -23,7 +23,7 @@ title: 在pcba-test模式中控制gpio
 
 <h2>关于编号的计算</h2>
 
-<p>计算引脚编号并不复杂，举个例子，在rk3188中有四组gpio，分别是GPIO0到GPIO3，在/sys/class/gpio目录下，我们已经看到四个目录，分别是gpiochip160，gpiochip192，gpiochip224，gpiochip256。</p>
+<p>计算引脚编号并不复杂，举个例子，假设现在有四组gpio，分别是GPIO0到GPIO3，在/sys/class/gpio目录下，我们已经看到四个目录，分别是gpiochip160，gpiochip192，gpiochip224，gpiochip256。</p>
 
 <p>从这里我们可以得到几个信息，四组gpio对应的起始编号可以知道，分别是160，191，224，256；每组gpio的数量可以知道，不超过32个；所以最小的gpio编号就是160，最大的编号应该256+32=288。</p>
 
@@ -105,7 +105,7 @@ void* moto_test(void *argv)
 
 <p>上面是基于rk的pcba test框架写的一个gpio控制，就是按照上面说的，首先往export文件中写入一个gpio编号，等内核导出该gpio口之后，直接往相应的direction文件写入high或者low参数，即可实现控制。这里具体是控制一个外接的马达，让它每隔2秒震动一次。</p>
 
-<p>详细可见:https://github.com/huolinliang/rk-pcba-test-addition</p>
+<p>详细:https://github.com/huolinliang/rk-pcba-test-addition</p>
 
 <p>Author:leung</p>
 <p>{{ page.date | date_to_string }}</p>
