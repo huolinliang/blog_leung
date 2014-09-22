@@ -1,0 +1,114 @@
+---
+layout: default
+title: 批量下载论坛图片
+---
+
+<h2>批量下载论坛图片</h2>
+
+<p>最近有个小伙伴在www.mt-bbs.com这个论坛上一直在下图片，苦于没有批量下载的手段，使用现有的一些下图插件也没用，因为论坛的图片并不是原图展示，而是一些缩略图，插件只能下到缩略图。</p>
+
+<p>经过分析，在图片展示的页面源码中，是可以找到所有原图片的地址的。</p>
+
+<p>基于这一点，把页面的html源码下载下来，然后写一个简单的shell，找出所有的原图地址，然后用wget之类的工具下载下来就ok了。当然，这样的做法算不上自动，不过却比较省心，以后要是碰到其他类似的网站，自己改一下匹配规则就可以了。</p>
+
+<pre><code>&lt;a href="javascript:;"&gt;&lt;img id="aimg_3006815" aid="3006815" src="static/image/common/none.gif" onclick="zoom(this, this.getAttribute('zoomfile'), 0, 0, '0')" zoomfile="http://image.mt-  bbs.com/data/attachment/forum/201208/31/162600j4yyj4j6x54452co.jpg" file="http://image.mt-bbs.com/data/attachment/forum/201208/31/162600j4yyj4j6x54452co.jpg.thumb.jpg" alt="IMG_3195.    JPG" title="IMG_3195.JPG" w="4000" /&gt;&lt;/a&gt;
+</code></pre>
+
+<p>上面是从页面源码中截取出来的一段，里面的zoomfile后面跟着的就是原图的地址。</p>
+
+<p>在终端中测试，使用下面的代码即可提取出地址。首先把html文件整个cat出来，然后grep出带zoomfile关键字的行，然后以="作为分隔符，第7个字段就是地址那一部分，但是后面有一些多余的字符" file，所以再用sed把这些字符删掉。最后，为了方便接下来的下载，把截取的结果导出到文件中。</p>
+
+<pre><code>cat xx.html | grep zoomfile | awk -F '="' '{print $7}' | sed "s/\" file//g" &gt;&gt; zoomfile_line
+</code></pre>
+
+<p>结果类似如下：</p>
+
+<pre><code>http://image.mt-bbs.com/data/attachment/forum/201208/31/162600j4yyj4j6x54452co.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/16260308on8316hm6bpo0q.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162610mlsooh9bb77qc2nl.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162615k546wyauz5o4waqz.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162620fvueaep2jehxvxsc.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162625utryc3svs0kubns7.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162627n5u3b5z2c93xbndb.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162630fdatnbtntnvnafvt.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162635361jyj16ccrzqyh1.jpg
+http://image.mt-bbs.com/data/attachment/forum/201208/31/162638qtze1g15q31yyw7g.jpg
+</code></pre>
+
+<p>这样就足够了，接下来就可以直接使用wget来下载了，但是普通情况下，我们使用wget下载东西是一个一个下载的，这样的话太慢，经过简单的搜索，在网上看到有人提供了一种方法，可以让wget也多线程下载，就直接拿来用了- -，基本的原理就是读取文件里面的地址，然后使用wget的-b参数使下载在后台运行，为了不至于被网站拒绝，所以每次都休眠0.2秒。</p>
+
+<pre><code>cat zoomfile_line |
+while read row; do
+    sleep 0.2 
+    wget -b -N -c -P image_save $row -a ./wget.log                                                                                                                                
+done
+</code></pre>
+
+<p>核心的操作就是这几句了，比较简单。当然，要把这个脚本作为自己工具包中的一员，还是要做一些工作，尽量完善一下，如做一些读取失败的判断；把图片放到指定目录中，避免目录看起来过度混乱；统计一下下载时间；统计图片数量；删除中间生成的临时文件等。最终完成的脚本如下：</p>
+
+<pre><code>#!/bin/bash
+####################################################
+#    Info: download images from www.mt-bbs.com     #
+#    Author: Leung                                 #
+#    Date: 20140918                                #
+####################################################
+
+time_all_start=$(date +%s)
+
+# go into each directory and do the next
+for j in $(ls -d */);do
+cd $j
+echo -e "\n\tMission $j start."
+
+if [ ! -d image_save ]; then
+mkdir image_save
+fi
+
+# check if any htm* file exist in each directory
+ls ./*.htm* 1&gt;/dev/null 2&gt;&amp;1
+if [ $? -eq 0 ]; then
+for i in $(ls ./*.htm* | awk '{print $1;}');do
+cat $i | grep zoomfile | awk -F '="' '{print $7}' | sed "s/\" file//g" &gt;&gt; zoomfile_line
+done
+
+# batch download with wget
+cat zoomfile_line |
+while read row; do
+sleep 0.2
+wget -b -N -c -P image_save $row -a ./wget.log 
+done
+
+# check if download finished, and show images info
+while :
+do
+line_sum=$(cat wget.log | wc -l)
+sleep 5 
+line_sum2=$(cat wget.log | wc -l)
+if [ $line_sum -eq $line_sum2 ]; then
+echo -e "\n\tMission $j completed."
+img_num=$(ls image_save/ | wc -l)
+img_size=$(du -sh image_save/ | awk '{print $1}')
+echo -e "\tThere are $img_num pictures in $j."
+echo -e  "\tDirectory size : $img_size"
+echo ""
+break
+else
+echo -e "\tStill downloading...keep waiting..."
+fi
+done
+
+# remove all temporary files we created
+rm zoomfile_line
+rm wget.log
+else
+echo -e "\tFailed: There is no html file in $j\n"
+fi
+cd - 1&gt;/dev/null
+done
+
+time_all_end=$(date +%s)
+echo -e "\tTotally takes $(( $time_all_end - $time_all_start )) seconds.\n"
+</code></pre>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
