@@ -1,0 +1,223 @@
+---
+layout: default
+title: 几个排序实例
+---
+
+<h2>几个排序实例</h2>
+
+<p>两个月没有更新博客了，今天重温一下几个常用的排序算法。</p>
+
+<h3>快速排序</h3>
+
+<p>快速排序是使用率极高的排序方法，属于分治法的一种，基本思想是先定一个基准数，通过一轮比较，把比基准数小的放在一边，比基准数大的放在另一边，从而形成了两个数列，然后分别对两边的数，递归进行上述过程，直至排序结束。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+void QuickSort(int s[], int low, int high);
+void Swap(int *a, int *b);
+
+int main(void)
+{
+    int i, size;
+    int s[] = {1, 5, 7, 3, 2, 9, 0, 8, 4, 6};
+    size = sizeof(s) / sizeof(s[0]);
+    QuickSort(s, 0, 9);
+    for(i = 0; i &lt; size; i++)
+        printf("%d ", s[i]);
+    printf("\n");
+
+}
+
+void QuickSort(int s[], int low, int high)
+{
+    int i, last;
+    if(low &lt; high) {
+        last = low;
+        for(i = low + 1; i &lt;= high; i++) {
+            if(s[i] &lt; s[low])
+                Swap(&amp;s[i], &amp;s[++last]);
+        }
+        Swap(&amp;s[last], &amp;s[low]);
+        QuickSort(s, low, last - 1);
+        QuickSort(s, last + 1, high);
+    }
+
+}
+
+void Swap(int *a, int *b)
+{
+    if(a != b) {
+        *a ^= *b;
+        *b ^= *a;
+        *a ^= *b;
+    }
+}
+</code></pre>
+
+<h3>冒泡排序与选择排序</h3>
+
+<p>冒泡排序是逻辑最简单的排序之一，通过两层循环，相邻的数两两比较，把较大的放在后面，最多n-1轮之后，排序完成。 比较有意思的是，对比选择排序，可以发现两者的代码非常相似，选择排序是两层循环，但不是相邻的数进行比较，而是每一轮都寻找最小的一个数放在前面，然后在剩下的数中继续寻找最小的数排在第二位，直至排序完成。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+void BubbleSort(int s[], int size);
+void SelectSort(int s[], int size);
+void Swap(int *a, int *b);
+
+int main(void)
+{
+    int i, size;
+    int s[] = {1, 6, 8, 9, 0, 8, 5, 4, 3, 2};
+    size = sizeof(s) / sizeof(s[0]);
+    //BubbleSort(s, size);
+    SelectSort(s, size);
+    for(i = 0; i &lt; size; i++)
+        printf("%d ", s[i]);
+    printf("\n");
+
+}
+
+void BubbleSort(int s[], int size)
+{
+    int i, j;
+    for(i = 0; i &lt; size -1; i++) {
+        for(j = 0; j &lt; size - 1 - i; j++) {
+            if(s[j] &gt; s[j + 1])
+                Swap(&amp;s[j], &amp;s[j + 1]);
+        }
+    }
+
+}
+
+void SelectSort(int s[], int size)
+{
+    int i, j;
+    for(i = 0; i &lt; size; i++) {
+        for(j = i + 1; j &lt; size; j++) {
+            if(s[j] &lt; s[i])
+                Swap(&amp;s[j], &amp;s[i]);
+        }
+    }
+}
+
+void Swap(int *a, int *b)
+{
+    if(a != b) {
+        *a ^= *b;
+        *b ^= *a;
+        *a ^= *b;
+    }
+}
+</code></pre>
+
+<h3>直接插入排序</h3>
+
+<p>直接插入排序,每次从无序表中取出第一个元素，把它插入到有序表的合适位置，使有序表仍然有。序
+第一趟比较前两个数，然后把第二个数按大小插入到有序表中； 第二趟把第三个数据与前两个数从前向后扫描，把第三个数按大小插入到有序表中；依次进行下去，进行了(n-1)趟扫描以后就完成了整个排序过程。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+void InsertSort(int s[], int size);
+
+int main(void)
+{
+    int i, size;
+    int s[] = {1, 4, 6, 8, 9, 0, 2, 3, 5, 7};
+    size = sizeof(s) / sizeof(s[0]);
+    InsertSort(s, size);
+    for(i = 0; i &lt; size; i++)
+        printf("%d ", s[i]);
+    printf("\n");
+
+}
+
+void InsertSort(int s[], int size)
+{
+    int i, j, k, temp;
+    for(j = 1; j &lt; size; j++) {
+        i = 0;
+        while(s[i] &lt; s[j] &amp;&amp; i &lt; j)
+            i++;
+        if(i != j) {
+            temp = s[j];
+            for(k = j; k &gt; i; k--)
+                s[k] = s[k - 1];
+            s[i] = temp;
+        }
+    }
+}
+</code></pre>
+
+<h3>堆排序</h3>
+
+<p>堆排序，这里讨论的是最大堆，父结点比左右孩子都要大，堆顶一定是所有元素中的最大值，因此可以快速地得到元素中的最大值。另外，堆的存储我们用数组来表示，父节点为i，左孩子就是2i+1，右孩子为2i+2。进行堆排序一般有三个过程：</p>
+
+<ul>
+<li>堆调整：比较父节点和左右孩子，如果左右孩子比根节点的值大，则进行交换，以满足堆的定义</li>
+<li>建立堆：数据一开始可以看作是无序的完全二叉树，建立堆就是对所有的非叶子节点进行堆调整</li>
+<li><p>堆排序：首先建立堆，然后交换根节点与最后一个叶子节点，交换之后把最后的叶子节点当作是有序数组，然后循环上述过程，重新对剩下的数进行堆调整，并依次把最大数交换到叶子节点中。最后，形成有序数组。</p>
+
+<h1>include <stdio.h></h1>
+
+<p>void Swap(int *a, int *b);
+void HeapSort(int s[], int size);
+void BuildHeap(int s[], int size);
+void HeapAdjust(int s[], int i, int size);</p>
+
+<p>int main(void)
+{
+    int i, size;
+    int s[] = {1, 4, 6, 8, 0, 9, 2, 3, 5, 7};
+    size = sizeof(s) / sizeof(s[0]);
+    HeapSort(s, size);
+    for(i = 0; i &lt; size; i++)
+        printf("%d ", s[i]);
+    printf("\n");
+}</p>
+
+<p>void HeapAdjust(int s[], int i, int size)
+{
+    int lchild = 2 * i + 1;
+    int rchild = 2 * i + 2;
+    int max = i;
+    if(i &lt;= size / 2) {
+        if(lchild &lt;= size &amp;&amp; s[lchild] > s[max])
+            max = lchild;
+        if(rchild &lt;= size &amp;&amp; s[rchild] > s[max])
+            max = rchild;
+        if(max != i) {
+            Swap(&amp;s[max], &amp;s[i]);
+            HeapAdjust(s, max, size);
+        }
+    }
+}</p>
+
+<p>void BuildHeap(int s[], int size)
+{
+    int i;
+    for(i = size / 2; i >= 0; i--)
+        HeapAdjust(s, i, size);
+}</p>
+
+<p>void HeapSort(int s[], int size)
+{
+    int i;
+    BuildHeap(s, size);
+    for(i = size - 1; i >= 0; i--) {
+        Swap(&amp;s[i], &amp;s[0]);
+        HeapAdjust(s, 0, i - 1);
+    }
+}</p>
+
+<p>void Swap(int *a, int *b)
+{
+    if(a != b) {
+        *a ^= *b;
+        *b ^= *a;
+        *a ^= *b;
+    }
+}</p></li>
+</ul>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
