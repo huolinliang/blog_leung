@@ -1,9 +1,4 @@
----
-layout: default
-title: 几个排序实例
----
-
-<h2>几个排序实例</h2>
+<h2>几个排序算法实例</h2>
 
 <p>两个月没有更新博客了，今天重温一下几个常用的排序算法。</p>
 
@@ -152,19 +147,20 @@ void InsertSort(int s[], int size)
 
 <p>堆排序，这里讨论的是最大堆，父结点比左右孩子都要大，堆顶一定是所有元素中的最大值，因此可以快速地得到元素中的最大值。另外，堆的存储我们用数组来表示，父节点为i，左孩子就是2i+1，右孩子为2i+2。进行堆排序一般有三个过程：</p>
 
-<ul>
-<li>堆调整：比较父节点和左右孩子，如果左右孩子比根节点的值大，则进行交换，以满足堆的定义</li>
-<li>建立堆：数据一开始可以看作是无序的完全二叉树，建立堆就是对所有的非叶子节点进行堆调整</li>
-<li><p>堆排序：首先建立堆，然后交换根节点与最后一个叶子节点，交换之后把最后的叶子节点当作是有序数组，然后循环上述过程，重新对剩下的数进行堆调整，并依次把最大数交换到叶子节点中。最后，形成有序数组。</p>
+<p>堆调整：比较父节点和左右孩子，如果左右孩子比根节点的值大，则进行交换，以满足堆的定义</p>
 
-<h1>include <stdio.h></h1>
+<p>建立堆：数据一开始可以看作是无序的完全二叉树，建立堆就是对所有的非叶子节点进行堆调整</p>
 
-<p>void Swap(int *a, int *b);
+<p>堆排序：首先建立堆，然后交换根节点与最后一个叶子节点，交换之后把最后的叶子节点当作是有序数组，然后循环上述过程，重新对剩下的数进行堆调整，并依次把最大数交换到叶子节点中。最后，形成有序数组。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+void Swap(int *a, int *b);
 void HeapSort(int s[], int size);
 void BuildHeap(int s[], int size);
-void HeapAdjust(int s[], int i, int size);</p>
+void HeapAdjust(int s[], int i, int size);
 
-<p>int main(void)
+int main(void)
 {
     int i, size;
     int s[] = {1, 4, 6, 8, 0, 9, 2, 3, 5, 7};
@@ -173,51 +169,48 @@ void HeapAdjust(int s[], int i, int size);</p>
     for(i = 0; i &lt; size; i++)
         printf("%d ", s[i]);
     printf("\n");
-}</p>
+}
 
-<p>void HeapAdjust(int s[], int i, int size)
+void HeapAdjust(int s[], int i, int size)
 {
     int lchild = 2 * i + 1;
     int rchild = 2 * i + 2;
     int max = i;
     if(i &lt;= size / 2) {
-        if(lchild &lt;= size &amp;&amp; s[lchild] > s[max])
+        if(lchild &lt;= size &amp;&amp; s[lchild] &gt; s[max])
             max = lchild;
-        if(rchild &lt;= size &amp;&amp; s[rchild] > s[max])
+        if(rchild &lt;= size &amp;&amp; s[rchild] &gt; s[max])
             max = rchild;
         if(max != i) {
             Swap(&amp;s[max], &amp;s[i]);
             HeapAdjust(s, max, size);
         }
     }
-}</p>
+}
 
-<p>void BuildHeap(int s[], int size)
+void BuildHeap(int s[], int size)
 {
     int i;
-    for(i = size / 2; i >= 0; i--)
+    for(i = size / 2; i &gt;= 0; i--)
         HeapAdjust(s, i, size);
-}</p>
+}
 
-<p>void HeapSort(int s[], int size)
+void HeapSort(int s[], int size)
 {
     int i;
     BuildHeap(s, size);
-    for(i = size - 1; i >= 0; i--) {
+    for(i = size - 1; i &gt;= 0; i--) {
         Swap(&amp;s[i], &amp;s[0]);
         HeapAdjust(s, 0, i - 1);
     }
-}</p>
+}
 
-<p>void Swap(int *a, int *b)
+void Swap(int *a, int *b)
 {
     if(a != b) {
         *a ^= *b;
         *b ^= *a;
         *a ^= *b;
     }
-}</p></li>
-</ul>
-
-<p>Author:leung</p>
-<p>{{ page.date | date_to_string }}</p>
+}
+</code></pre>
