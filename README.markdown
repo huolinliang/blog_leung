@@ -14,5 +14,5 @@ Clone the repository.
 
 Following files, directories and their contents are copyright Leung. You may not reuse anything therein without my permission:
 
-* images/me.jpg
+* images/
 
