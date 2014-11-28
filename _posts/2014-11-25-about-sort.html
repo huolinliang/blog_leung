@@ -112,7 +112,7 @@ void Swap(int *a, int *b)
 
 <h3>直接插入排序</h3>
 
-<p>直接插入排序,每次从无序表中取出第一个元素，把它插入到有序表的合适位置，使有序表仍然有。序
+<p>直接插入排序,每次从无序表中取出第一个元素，把它插入到有序表的合适位置，使有序表仍然有序。
 第一趟比较前两个数，然后把第二个数按大小插入到有序表中； 第二趟把第三个数据与前两个数从前向后扫描，把第三个数按大小插入到有序表中；依次进行下去，进行了(n-1)趟扫描以后就完成了整个排序过程。</p>
 
 <pre><code>#include &lt;stdio.h&gt;
@@ -219,6 +219,63 @@ void Swap(int *a, int *b)
     }
 }
 </code></pre>
+
+<h3>归并排序</h3>
+
+<p>归并排序的思想是，把两个有序数列合并成一个有序的数列，而产生有序数列的方法是不断地进行分隔，当每一个数列都只有一个数的时候，即可认为是有序的，然后循环地把这些有序数列合并起来。</p>
+
+<pre><code>#include &lt;stdio.h&gt;
+
+void MergeSort(int s[], int low, int high, int temp[]);
+void MergeArray(int s[], int low, int mid, int high, int temp[]);
+
+int main(void)
+{
+    int i;
+    int s[] = {1, 3, 5, 7, 9, 2, 4, 6, 8};
+    size = sizeof(s) / sizeof(s[0]);
+    int p[size];
+    MergeSort(s, 0, size - 1, p);
+    for(i = 0; i &lt; size; i++)
+        printf("%d ", s[i]);
+    printf("\n");
+}
+
+void MergeSort(int s[], int low, int high, int temp[])
+{
+    if(low &lt; high) {
+       int mid = (low + high) / 2;
+       MergeSort(s, low, mid, temp);
+       MergeSort(s, mid + 1, high, temp);
+       MergeArray(s, low, mid, high, temp);
+    }
+
+}
+
+//合并有序数列
+void MergeArray(int s[], int low, int mid, int high, int temp[])
+{
+    int k = 0;
+    int i = low;
+    int j = mid + 1;
+    while(i &lt;= mid &amp;&amp; j &lt;= high) {
+        if(s[i] &lt;= s[j]) {
+            temp[k++] = s[i++];
+        }
+        else {
+            temp[k++] = s[j++];
+        }
+    }
+    while(i &lt;= mid)
+        temp[k++] = s[i++];
+    while(j &lt;= high)
+        temp[k++] = s[j++];
+    for(i = 0; i &lt; k; i++)
+        s[low + i] = temp[i];
+
+}
+</code></pre>
+
 
 <p>Author:leung</p>
 <p>{{ page.date | date_to_string }}</p>
