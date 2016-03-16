@@ -49,18 +49,20 @@ android:gravity="center_horizontal"&gt;
 
 <h3>设计viewpager的布局</h3>
 
-<p>这里，只是放了一个ImageView，用来展示动画，指定好ImageView的background属性，指定自己需要的动画文件。 <br>
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content">
-    <ImageView
-    android:id="@+id/pager_imageview"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_centerHorizontal="true"
-    android:background="@drawable/scan_animate"/>
-    </RelativeLayout></p>
+<p>这里，只是放了一个ImageView，用来展示动画，指定好ImageView的background属性，指定自己需要的动画文件。    </p>
+
+<pre><code>&lt;RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:orientation="vertical"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"&gt;
+&lt;ImageView
+android:id="@+id/pager_imageview"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:layout_centerHorizontal="true"
+android:background="@drawable/scan_animate"/&gt;
+&lt;/RelativeLayout&gt;
+</code></pre>
 
 <p>如上是viewpager_1.xml的布局，可以依此继续写出viewpager_2.xml,viewpager_3.xml，这里将使用三个viewpager。</p>
 
@@ -246,4 +248,3 @@ public class MainActivity extends ActionBarActivity {
 
 <p>Author:leung</p>
 <p>{{ page.date | date_to_string }}</p>
-
