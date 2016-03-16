@@ -1,0 +1,249 @@
+---
+layout: default
+title: viewpager中播放动画
+---
+
+<h2>viewpager中播放动画</h2>
+
+<p>Android中可以使用viewpager实现页面的滑动，比如引导页的广告，就大量使用了ViewPager。
+官方的教程中使用的都是图片，这里，实现滑动页面中可以播放动画的效果。</p>
+
+<h3>新建工程，在主layout中添加viewpager</h3>
+
+<p>在这里，最上面是Android Studio默认的TextView，留着不管，中间是ViewPager，
+最下面是一个线性布局，这个布局将用来放底部指示页面的小圆点。</p>
+
+<pre><code>&lt;RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+android:paddingRight="@dimen/activity_horizontal_margin"
+android:paddingTop="@dimen/activity_vertical_margin"
+android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity"&gt;
+
+&lt;TextView
+android:id="@+id/textview1"
+android:text="@string/hello_world"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content" /&gt;
+
+&lt;android.support.v4.view.ViewPager
+android:id="@+id/pager"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content"
+android:layout_below="@+id/textview1"
+android:layout_above="@+id/ll_pager_num"
+android:layout_centerHorizontal="true"
+android:layout_centerVertical="true"/&gt;
+
+&lt;LinearLayout
+android:id="@+id/ll_pager_num"
+android:layout_width="wrap_content"
+android:layout_height="16dp"
+android:orientation="horizontal"
+android:layout_alignParentBottom="true"
+android:layout_centerHorizontal="true"
+android:gravity="center_horizontal"&gt;
+&lt;/LinearLayout&gt;
+&lt;/RelativeLayout&gt;
+</code></pre>
+
+<h3>设计viewpager的布局</h3>
+
+<p>这里，只是放了一个ImageView，用来展示动画，指定好ImageView的background属性，指定自己需要的动画文件。 <br>
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+    <ImageView
+    android:id="@+id/pager_imageview"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_centerHorizontal="true"
+    android:background="@drawable/scan_animate"/>
+    </RelativeLayout></p>
+
+<p>如上是viewpager_1.xml的布局，可以依此继续写出viewpager_2.xml,viewpager_3.xml，这里将使用三个viewpager。</p>
+
+<h3>动画xml文件</h3>
+
+<p>上面引用了一个帧动画scan_animate,所以需要添加动画xml,以及用到的图片，scan_animate.xml代码如下：</p>
+
+<pre><code>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;animation-list xmlns:android="http://schemas.android.com/apk/res/android" android:oneshot="false"  &gt;
+&lt;item android:drawable="@drawable/b1" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b2" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b3" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b4" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b5" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b6" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b7" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b8" android:duration="120" /&gt;
+&lt;item android:drawable="@drawable/b9" android:duration="120" /&gt;
+&lt;/animation-list&gt;
+</code></pre>
+
+<h3>MainActivity.java代码</h3>
+
+<pre><code>package leung.myviewpagerdemo;
+
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.AnimationDrawable;
+import android.support.v4.view.PagerAdapter;
+import android.support.v4.view.ViewPager;
+import android.support.v7.app.ActionBarActivity;
+import android.os.Bundle;
+import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+
+import java.util.ArrayList;
+
+
+public class MainActivity extends ActionBarActivity {
+    private AnimationDrawable pagerAnimateDrawable;
+    private ImageView pagerAnimateView;
+    private View view1,view2,view3;
+    private LayoutInflater mLayoutInflater;
+    private MyPagerAdapter mPagerAdapter;
+    private ArrayList&lt;View&gt; mViewList = new ArrayList&lt;View&gt;();
+    private LinearLayout mNumLayout;
+    private Button mPreSelectedBt;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mLayoutInflater = getLayoutInflater();
+        //这里使用静态的xml layout，在setConetentView之前先add上
+        view1 = mLayoutInflater.inflate(R.layout.viewpager_1, null);
+        view2 = mLayoutInflater.inflate(R.layout.viewpager_2, null);
+        view3 = mLayoutInflater.inflate(R.layout.viewpager_3, null);
+        mViewList.add(view1);
+        mViewList.add(view2);
+        mViewList.add(view3);
+        setContentView(R.layout.activity_main);
+        final ViewPager viewPager = (ViewPager) findViewById(R.id.pager);
+        //mNumLayout,这个linearlayout里面准备放底部的小圆点
+        mNumLayout = (LinearLayout) findViewById(R.id.ll_pager_num);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.dot_normal);
+        //根据已添加的viewpager页数动态添加小圆点
+        for (int i = 0; i &lt; mViewList.size(); i++) {
+            Button bt = new Button(this);
+            bt.setLayoutParams(new ViewGroup.LayoutParams(bitmap.getWidth(), bitmap.getHeight()));
+            bt.setBackgroundResource(R.drawable.dot_normal);
+            mNumLayout.addView(bt);
+        }
+        //添加viewpager的adapter，把PagerAdapter和ViewPager关联起来
+        //MyPagerAdapter是一个内部类，写在了最下面
+        mPagerAdapter = new MyPagerAdapter();
+        viewPager.setAdapter(mPagerAdapter);
+        //viewpager的监听器，我们将在onPageSelected函数执行动画的播放
+        viewPager.setOnPageChangeListener(new ViewPager.OnPageChangeListener() {
+
+            @Override
+            public void onPageSelected(int position) {
+
+            if (mPreSelectedBt != null) {
+                mPreSelectedBt.setBackgroundResource(R.drawable.dot_normal);
+            }
+            Button currentBt = (Button) mNumLayout.getChildAt(position);
+            currentBt.setBackgroundResource(R.drawable.dot_selected);
+            mPreSelectedBt = currentBt;
+            //针对不同的页面，播放各自的动画
+            if (position == 0) {
+                pagerAnimateView = (ImageView) view1.findViewById(R.id.pager_imageview);
+                pagerAnimateDrawable = (AnimationDrawable) pagerAnimateView.getBackground();
+                pagerAnimateDrawable.start();
+            }
+            if (position == 1) {
+                pagerAnimateView = (ImageView) view2.findViewById(R.id.pager_imageview);
+                pagerAnimateDrawable = (AnimationDrawable) pagerAnimateView.getBackground();
+                pagerAnimateDrawable.start();
+            }
+            if (position == 2) {
+                pagerAnimateView = (ImageView) view3.findViewById(R.id.pager_imageview);
+                pagerAnimateView.setBackgroundResource(R.drawable.scan_animate);
+                pagerAnimateDrawable = (AnimationDrawable) pagerAnimateView.getBackground();
+                pagerAnimateDrawable.start();
+            }
+            }
+
+            @Override
+                public void onPageScrolled(int arg0, float arg1, int arg2) {
+                    // TODO Auto-generated method stub
+
+                }
+
+            @Override
+                public void onPageScrollStateChanged(int arg0) {
+                    // TODO Auto-generated method stub
+
+                }
+        });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        //当程序初始化完毕，立刻执行动画播放，默认播放第一页
+        pagerAnimateView = (ImageView) view1.findViewById(R.id.pager_imageview);
+        pagerAnimateDrawable = (AnimationDrawable) pagerAnimateView.getBackground();
+        pagerAnimateDrawable.start();
+    }
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    //内部类，PagerAdapter
+    class MyPagerAdapter extends PagerAdapter {
+
+        @Override
+        public int getCount() {
+                return mViewList.size();
+        }
+
+        @Override
+        public Object instantiateItem(View container, int position) {
+                ((ViewPager) container).addView(mViewList.get(position),0);
+                return mViewList.get(position);
+        }
+
+        @Override
+        public void destroyItem(View container, int position, Object object) {
+                ((ViewPager) container).removeView(mViewList.get(position));
+        }
+
+        @Override
+        public boolean isViewFromObject(View arg0, Object arg1) {
+                return arg0 == arg1;
+        }
+    }
+}
+</code></pre>
+
+<p>Author:leung</p>
+<p>{{ page.date | date_to_string }}</p>
+
